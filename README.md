@@ -1,4 +1,4 @@
-![radish](https://raw.githubusercontent.com/massivefermion/radish/main/banner.png)
+![radish](https://raw.githubusercontent.com/massivefermion/radish/main/banner.jpg)
 
 [![Package Version](https://img.shields.io/hexpm/v/radish)](https://hex.pm/packages/radish)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/radish/)
