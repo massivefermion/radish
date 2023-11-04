@@ -5,7 +5,7 @@
 
 # radish
 
-bson encoder and decoder for gleam
+A Redis client for Gleam
 
 ## <img width=32 src="https://raw.githubusercontent.com/massivefermion/radish/main/icon.png"> Quick start
 
@@ -19,7 +19,6 @@ gleam shell # Run an Erlang shell
 ```sh
 gleam add radish
 ```
-
 
 ## <img width=32 src="https://raw.githubusercontent.com/massivefermion/radish/main/icon.png"> Usage
 

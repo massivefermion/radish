@@ -45,7 +45,7 @@ pub fn set(socket, key: String, value: String, ttl: option.Option(Int)) {
   |> result.flatten
 }
 
-// only sets a key if it does not already exist
+/// only sets a key if it does not already exist
 pub fn set_new(socket, key: String, value: String, ttl: option.Option(Int)) {
   case ttl {
     option.None -> command.set(key, value, [command.NX])
@@ -62,7 +62,7 @@ pub fn set_new(socket, key: String, value: String, ttl: option.Option(Int)) {
   |> result.flatten
 }
 
-// only sets a key if it already exists, returns the old value
+/// only sets a key if it already exists, returns the old value
 pub fn set_existing(socket, key: String, value: String, ttl: option.Option(Int)) {
   case ttl {
     option.None -> command.set(key, value, [command.XX, command.GET])
@@ -91,7 +91,7 @@ pub fn del(socket, keys: List(String)) {
   |> result.flatten
 }
 
-// adds 1 to an integer and returns the new value
+/// adds 1 to an integer and returns the new value
 pub fn incr(socket, key: String) {
   command.incr(key)
   |> execute(socket, _)
@@ -104,7 +104,7 @@ pub fn incr(socket, key: String) {
   |> result.flatten
 }
 
-// adds an arbitrary value to an integer and returns the new value
+/// adds an arbitrary value to an integer and returns the new value
 pub fn incr_by(socket, key: String, value: Int) {
   command.incr_by(key, value)
   |> execute(socket, _)
@@ -117,7 +117,7 @@ pub fn incr_by(socket, key: String, value: Int) {
   |> result.flatten
 }
 
-// adds an arbitrary float value to a number and returns the new value
+/// adds an arbitrary float value to a number and returns the new value
 pub fn incr_by_float(socket, key: String, value: Float) {
   command.incr_by_float(key, value)
   |> execute(socket, _)
@@ -132,7 +132,7 @@ pub fn incr_by_float(socket, key: String, value: Float) {
   |> result.flatten
 }
 
-// subtracts 1 from an integer and returns the new value
+/// subtracts 1 from an integer and returns the new value
 pub fn decr(socket, key: String) {
   command.incr(key)
   |> execute(socket, _)
@@ -145,7 +145,7 @@ pub fn decr(socket, key: String) {
   |> result.flatten
 }
 
-// subtracts an arbitrary value from an integer and returns the new value
+/// subtracts an arbitrary value from an integer and returns the new value
 pub fn decr_by(socket, key: String, value: Int) {
   command.incr_by(key, value)
   |> execute(socket, _)

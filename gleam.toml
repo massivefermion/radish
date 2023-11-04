@@ -5,8 +5,8 @@ description = "A Redis client for Gleam"
 gleam = ">= 0.32.0"
 licences = ["Apache-2.0"]
 links = [
-  {title = "gleam", href = "https://gleam.run"},
-  {title = "redis", href = "https://redis.io"},
+  {title = "Gleam", href = "https://gleam.run"},
+  {title = "Redis", href = "https://redis.io"},
 ]
 repository = {type = "github", user = "massivefermion", repo = "radish"}
 
