@@ -92,8 +92,8 @@ fn bulk_error(value: String) {
   } <> "\r\n" <> value <> "\r\n"
 }
 
-fn big_number(value: String) {
-  "(" <> value <> "\r\n"
+fn big_number(value: Int) {
+  "(" <> int.to_string(value) <> "\r\n"
 }
 
 fn double(value: Float) {

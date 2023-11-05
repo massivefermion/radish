@@ -16,132 +16,99 @@ pub type SetOption {
 }
 
 pub fn hello(protocol: Int) {
-  [BulkString("HELLO"), BulkString(int.to_string(protocol))]
-  |> Array
-  |> encode
+  ["HELLO", int.to_string(protocol)]
+  |> prepare
+}
+
+pub fn keys(pattern: String) {
+  ["KEYS", pattern]
+  |> prepare
+}
+
+pub fn exists(keys: List(String)) {
+  ["EXISTS"]
+  |> list.append(list.map(keys, fn(key) { key }))
+  |> prepare
 }
 
 pub fn get(key: String) {
-  [BulkString("GET"), BulkString(key)]
-  |> Array
-  |> encode
+  ["GET", key]
+  |> prepare
+}
+
+pub fn mget(keys: List(String)) {
+  ["MGET"]
+  |> list.append(list.map(keys, fn(key) { key }))
+  |> prepare
+}
+
+pub fn append(key: String, value: String) {
+  ["APPEND", key, value]
+  |> prepare
 }
 
 pub fn set(key: String, value: String, options: List(SetOption)) {
   list.fold(
     options,
-    [BulkString("SET"), BulkString(key), BulkString(value)],
+    ["SET", key, value],
     fn(cmd, option) {
       case option {
-        NX -> list.append(cmd, [BulkString("NX")])
-        XX -> list.append(cmd, [BulkString("XX")])
-        GET -> list.append(cmd, [BulkString("GET")])
-        KEEPTTL -> list.append(cmd, [BulkString("KEEPTTL")])
-
-        EX(value) ->
-          list.append(
-            cmd,
-            [
-              BulkString("EX"),
-              BulkString(
-                value
-                |> int.to_string,
-              ),
-            ],
-          )
-
-        PX(value) ->
-          list.append(
-            cmd,
-            [
-              BulkString("PX"),
-              BulkString(
-                value
-                |> int.to_string,
-              ),
-            ],
-          )
-
-        EXAT(value) ->
-          list.append(
-            cmd,
-            [
-              BulkString("EXAT"),
-              BulkString(
-                value
-                |> int.to_string,
-              ),
-            ],
-          )
-
-        PXAT(value) ->
-          list.append(
-            cmd,
-            [
-              BulkString("PXAT"),
-              BulkString(
-                value
-                |> int.to_string,
-              ),
-            ],
-          )
+        NX -> list.append(cmd, ["NX"])
+        XX -> list.append(cmd, ["XX"])
+        GET -> list.append(cmd, ["GET"])
+        KEEPTTL -> list.append(cmd, ["KEEPTTL"])
+        EX(value) -> list.append(cmd, ["EX", int.to_string(value)])
+        PX(value) -> list.append(cmd, ["PX", int.to_string(value)])
+        EXAT(value) -> list.append(cmd, ["EXAT", int.to_string(value)])
+        PXAT(value) -> list.append(cmd, ["PXAT", int.to_string(value)])
       }
     },
   )
-  |> Array
-  |> encode
+  |> prepare
 }
 
-pub fn keys(pattern: String) {
-  [BulkString("KEYS"), BulkString(pattern)]
-  |> Array
-  |> encode
+pub fn mset(kv_list: List(#(String, String))) {
+  kv_list
+  |> list.map(fn(kv) { [kv.0, kv.1] })
+  |> list.flatten
+  |> list.append(["MSET"], _)
+  |> prepare
 }
 
 pub fn del(keys: List(String)) {
-  [BulkString("DEL")]
-  |> list.append(list.map(keys, fn(key) { BulkString(key) }))
-  |> Array
-  |> encode
-}
-
-pub fn exists(keys: List(String)) {
-  [BulkString("EXISTS")]
-  |> list.append(list.map(keys, fn(key) { BulkString(key) }))
-  |> Array
-  |> encode
+  ["DEL"]
+  |> list.append(list.map(keys, fn(key) { key }))
+  |> prepare
 }
 
 pub fn incr(key: String) {
-  [BulkString("INCR"), BulkString(key)]
-  |> Array
-  |> encode
+  ["INCR", key]
+  |> prepare
 }
 
 pub fn incr_by(key: String, value: Int) {
-  [BulkString("INCRBY"), BulkString(key), BulkString(int.to_string(value))]
-  |> Array
-  |> encode
+  ["INCRBY", key, int.to_string(value)]
+  |> prepare
 }
 
 pub fn incr_by_float(key: String, value: Float) {
-  [
-    BulkString("INCRBYFLOAT"),
-    BulkString(key),
-    BulkString(float.to_string(value)),
-  ]
-  |> Array
-  |> encode
+  ["INCRBYFLOAT", key, float.to_string(value)]
+  |> prepare
 }
 
 pub fn decr(key: String) {
-  [BulkString("DECR"), BulkString(key)]
-  |> Array
-  |> encode
+  ["DECR", key]
+  |> prepare
 }
 
 pub fn decr_by(key: String, value: Int) {
-  [BulkString("DECRBY"), BulkString(key), BulkString(int.to_string(value))]
+  ["DECRBY", key, int.to_string(value)]
+  |> prepare
+}
+
+fn prepare(parts: List(String)) {
+  parts
+  |> list.map(BulkString)
   |> Array
   |> encode
 }

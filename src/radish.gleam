@@ -2,177 +2,34 @@ import gleam/list
 import gleam/float
 import gleam/option
 import gleam/result
-import radish/tcp
-import radish/error
+import gleam/otp/actor
+import gleam/erlang/process
 import radish/resp
+import radish/error
+import radish/client
 import radish/command
-import radish/decoder.{decode}
+import radish/utils.{execute}
 
-pub fn connect(host: String, port: Int) {
-  tcp.connect(host, port, 1024)
-  |> result.map(fn(socket) {
-    command.hello(3)
-    |> execute(socket, _)
-    socket
-  })
+pub fn start(host: String, port: Int, timeout: Int) {
+  use client <- result.then(client.start(host, port, timeout))
+
+  use _ <- result.then(
+    process.try_call(
+      client,
+      client.Command(command.hello(3), _, timeout),
+      timeout,
+    )
+    |> result.replace_error(actor.InitFailed(process.Abnormal(
+      "Failed to say hello",
+    ))),
+  )
+
+  Ok(client)
 }
 
-pub fn get(socket, key: String) {
-  command.get(key)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-pub fn set(socket, key: String, value: String, ttl: option.Option(Int)) {
-  case ttl {
-    option.None -> command.set(key, value, [])
-    option.Some(ttl) -> command.set(key, value, [command.PX(ttl)])
-  }
-  command.set(key, value, [])
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// only sets a key if it does not already exist
-pub fn set_new(socket, key: String, value: String, ttl: option.Option(Int)) {
-  case ttl {
-    option.None -> command.set(key, value, [command.NX])
-    option.Some(ttl) -> command.set(key, value, [command.NX, command.PX(ttl)])
-  }
-  command.set(key, value, [command.NX])
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// only sets a key if it already exists, returns the old value
-pub fn set_existing(socket, key: String, value: String, ttl: option.Option(Int)) {
-  case ttl {
-    option.None -> command.set(key, value, [command.XX, command.GET])
-    option.Some(ttl) ->
-      command.set(key, value, [command.XX, command.GET, command.PX(ttl)])
-  }
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-pub fn del(socket, keys: List(String)) {
-  command.del(keys)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(n) -> Ok(n)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// adds 1 to an integer and returns the new value
-pub fn incr(socket, key: String) {
-  command.incr(key)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(new) -> Ok(new)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// adds an arbitrary value to an integer and returns the new value
-pub fn incr_by(socket, key: String, value: Int) {
-  command.incr_by(key, value)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(new) -> Ok(new)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// adds an arbitrary float value to a number and returns the new value
-pub fn incr_by_float(socket, key: String, value: Float) {
-  command.incr_by_float(key, value)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.BulkString(new) ->
-        float.parse(new)
-        |> result.replace_error(error.RESPError)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// subtracts 1 from an integer and returns the new value
-pub fn decr(socket, key: String) {
-  command.incr(key)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(new) -> Ok(new)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-/// subtracts an arbitrary value from an integer and returns the new value
-pub fn decr_by(socket, key: String, value: Int) {
-  command.incr_by(key, value)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(new) -> Ok(new)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-pub fn exists(socket, keys: List(String)) {
-  command.exists(keys)
-  |> execute(socket, _)
-  |> result.map(fn(value) {
-    case value {
-      resp.Integer(n) -> Ok(n)
-      _ -> Error(error.RESPError)
-    }
-  })
-  |> result.flatten
-}
-
-pub fn keys(socket, pattern: String) {
+pub fn keys(client, pattern: String, timeout: Int) {
   command.keys(pattern)
-  |> execute(socket, _)
+  |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       resp.Array(array) ->
@@ -191,17 +48,217 @@ pub fn keys(socket, pattern: String) {
   |> result.flatten
 }
 
-fn execute(socket, cmd: BitArray) {
-  cmd
-  |> tcp.execute(socket, _, 1024)
-  |> result.map_error(fn(tcp_error) { error.TCPError(tcp_error) })
-  |> result.map(decode)
-  |> result.flatten
+pub fn exists(client, keys: List(String), timeout: Int) {
+  command.exists(keys)
+  |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleError(error) | resp.BulkError(error) ->
-        Error(error.ServerError(error))
-      value -> Ok(value)
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn get(client, key: String, timeout: Int) {
+  command.get(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn mget(client, keys: List(String), timeout: Int) {
+  command.mget(keys)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Array(array) ->
+        list.try_map(
+          array,
+          fn(item) {
+            case item {
+              resp.BulkString(str) -> Ok(str)
+              _ -> Error(error.RESPError)
+            }
+          },
+        )
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn append(client, key: String, value: String, timeout: Int) {
+  command.append(key, value)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn set(
+  client,
+  key: String,
+  value: String,
+  ttl: option.Option(Int),
+  timeout: Int,
+) {
+  case ttl {
+    option.None -> command.set(key, value, [])
+    option.Some(ttl) -> command.set(key, value, [command.PX(ttl)])
+  }
+  command.set(key, value, [])
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// only sets a key if it does not already exist
+pub fn set_new(
+  client,
+  key: String,
+  value: String,
+  ttl: option.Option(Int),
+  timeout: Int,
+) {
+  case ttl {
+    option.None -> command.set(key, value, [command.NX])
+    option.Some(ttl) -> command.set(key, value, [command.NX, command.PX(ttl)])
+  }
+  command.set(key, value, [command.NX])
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// only sets a key if it already exists, returns the old value
+pub fn set_existing(
+  client,
+  key: String,
+  value: String,
+  ttl: option.Option(Int),
+  timeout: Int,
+) {
+  case ttl {
+    option.None -> command.set(key, value, [command.XX, command.GET])
+    option.Some(ttl) ->
+      command.set(key, value, [command.XX, command.GET, command.PX(ttl)])
+  }
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
+  command.mset(kv_list)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn del(client, keys: List(String), timeout: Int) {
+  command.del(keys)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// adds 1 to an integer and returns the new value
+pub fn incr(client, key: String, timeout: Int) {
+  command.incr(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(new) -> Ok(new)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// adds an arbitrary value to an integer and returns the new value
+pub fn incr_by(client, key: String, value: Int, timeout: Int) {
+  command.incr_by(key, value)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(new) -> Ok(new)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// adds an arbitrary float value to a number and returns the new value
+pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
+  command.incr_by_float(key, value)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.BulkString(new) ->
+        float.parse(new)
+        |> result.replace_error(error.RESPError)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// subtracts 1 from an integer and returns the new value
+pub fn decr(client, key: String, timeout: Int) {
+  command.incr(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(new) -> Ok(new)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// subtracts an arbitrary value from an integer and returns the new value
+pub fn decr_by(client, key: String, value: Int, timeout: Int) {
+  command.incr_by(key, value)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(new) -> Ok(new)
+      _ -> Error(error.RESPError)
     }
   })
   |> result.flatten

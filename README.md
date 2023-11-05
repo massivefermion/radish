@@ -25,11 +25,19 @@ gleam add radish
 ```gleam
 import gleam/option
 import radish
+import radish/list
 
 pub fn main() {
-    let assert Ok(client) = radish.connect("localhost", 6379)
+  let assert Ok(client) = radish.start("localhost", 6379, 1024)
 
-    radish.set(client, "requests", "64", option.Some(60_000))
-    radish.decr(client, "requests")
+  radish.set(client, "requests", "64", option.Some(60_000), 1024)
+  radish.decr(client, "requests", 1024)
+
+  list.lpush(
+    client,
+    "names",
+    ["Gary", "Andy", "Nicholas", "Danny", "Shaun", "Ed"],
+  )
+  list.lpop(client, "names")
 }
 ```

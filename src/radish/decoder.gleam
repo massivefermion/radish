@@ -64,11 +64,7 @@ fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(consume_till_crlf(rest, <<>>))
       use value <- result.then(bit_array.to_string(value))
 
-      #(
-        value
-        |> resp.SimpleString,
-        rest,
-      )
+      #(resp.SimpleString(value), rest)
       |> Ok
     }
 
@@ -76,23 +72,17 @@ fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(consume_till_crlf(rest, <<>>))
       use value <- result.then(bit_array.to_string(value))
 
-      #(
-        value
-        |> resp.SimpleError,
-        rest,
-      )
+      #(resp.SimpleError(value), rest)
       |> Ok
     }
     <<"(":utf8, rest:bits>> -> {
       use #(value, rest) <- result.then(consume_till_crlf(rest, <<>>))
       use value <- result.then(bit_array.to_string(value))
 
-      #(
-        value
-        |> resp.BigNumber,
-        rest,
-      )
-      |> Ok
+      value
+      |> int.parse
+      |> result.map(resp.BigNumber)
+      |> result.map(fn(value) { #(value, rest) })
     }
 
     <<"$":utf8, rest:bits>> -> {
@@ -108,11 +98,7 @@ fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use value <- result.then(bit_array.to_string(value))
 
       let <<"\r\n":utf8, rest:bits>> = rest
-      #(
-        value
-        |> resp.BulkString,
-        rest,
-      )
+      #(resp.BulkString(value), rest)
       |> Ok
     }
 
@@ -129,11 +115,7 @@ fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use value <- result.then(bit_array.to_string(value))
 
       let <<"\r\n":utf8, rest:bits>> = rest
-      #(
-        value
-        |> resp.BulkError,
-        rest,
-      )
+      #(resp.BulkError(value), rest)
       |> Ok
     }
 
