@@ -31,7 +31,7 @@ pub fn rpush(client, key: String, values: List(String), timeout: Int) {
 }
 
 pub fn lpushx(client, key: String, values: List(String), timeout: Int) {
-  command.lpush(key, values)
+  command.lpushx(key, values)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -43,7 +43,7 @@ pub fn lpushx(client, key: String, values: List(String), timeout: Int) {
 }
 
 pub fn rpushx(client, key: String, values: List(String), timeout: Int) {
-  command.rpush(key, values)
+  command.rpushx(key, values)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
