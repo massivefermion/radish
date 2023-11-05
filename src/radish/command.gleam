@@ -1,8 +1,7 @@
 import gleam/int
 import gleam/list
 import gleam/float
-import radish/resp.{Array, BulkString}
-import radish/encoder.{encode}
+import radish/utils.{prepare}
 
 pub type SetOption {
   NX
@@ -104,11 +103,4 @@ pub fn decr(key: String) {
 pub fn decr_by(key: String, value: Int) {
   ["DECRBY", key, int.to_string(value)]
   |> prepare
-}
-
-fn prepare(parts: List(String)) {
-  parts
-  |> list.map(BulkString)
-  |> Array
-  |> encode
 }
