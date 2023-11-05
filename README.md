@@ -37,7 +37,8 @@ pub fn main() {
     client,
     "names",
     ["Gary", "Andy", "Nicholas", "Danny", "Shaun", "Ed"],
+    1024,
   )
-  list.lpop(client, "names")
+  list.lpop(client, "names", 1024)
 }
 ```
