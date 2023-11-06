@@ -240,7 +240,7 @@ pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
 
 /// subtracts 1 from an integer and returns the new value
 pub fn decr(client, key: String, timeout: Int) {
-  command.incr(key)
+  command.decr(key)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -253,7 +253,7 @@ pub fn decr(client, key: String, timeout: Int) {
 
 /// subtracts an arbitrary value from an integer and returns the new value
 pub fn decr_by(client, key: String, value: Int, timeout: Int) {
-  command.incr_by(key, value)
+  command.decr_by(key, value)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
