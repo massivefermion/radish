@@ -14,17 +14,17 @@ pub fn start(host: String, port: Int, timeout: Int) {
   use client <- result.then(client.start(host, port, timeout))
 
   use _ <- result.then(
-    process.try_call(
-      client,
-      client.Command(command.hello(3), _, timeout),
-      timeout,
-    )
+    execute(client, command.hello(3), timeout)
     |> result.replace_error(actor.InitFailed(process.Abnormal(
       "Failed to say hello",
     ))),
   )
 
   Ok(client)
+}
+
+pub fn shutdown(client) {
+  process.send(client, client.Shutdown)
 }
 
 pub fn keys(client, pattern: String, timeout: Int) {
@@ -258,6 +258,67 @@ pub fn decr_by(client, key: String, value: Int, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       resp.Integer(new) -> Ok(new)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn random_key(client, timeout: Int) {
+  command.random_key()
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.BulkString(str) -> Ok(str)
+      resp.Null -> Error(error.EmptyDBError)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn key_type(client, key: String, timeout: Int) {
+  command.key_type(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn rename(client, key: String, new_key: String, timeout: Int) {
+  command.rename(key, new_key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.SimpleString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn renamex(client, key: String, new_key: String, timeout: Int) {
+  command.renamex(key, new_key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+pub fn persist(client, key: String, timeout: Int) {
+  command.persist(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })

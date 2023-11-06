@@ -1,8 +1,8 @@
 import gleam/set
 
 pub type Value {
-  Null
   Nan
+  Null
   Infinity
   Integer(Int)
   Boolean(Bool)

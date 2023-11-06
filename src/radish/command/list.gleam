@@ -52,3 +52,28 @@ pub fn rpop(key: String, count: option.Option(Int)) {
   }
   |> prepare
 }
+
+pub fn lindex(key: String, index: Int) {
+  ["LINDEX", key, int.to_string(index)]
+  |> prepare
+}
+
+pub fn lrem(key: String, count: Int, value: String) {
+  ["LREM", key, int.to_string(count), value]
+  |> prepare
+}
+
+pub fn lset(key: String, index: Int, value: String) {
+  ["LSET", key, int.to_string(index), value]
+  |> prepare
+}
+
+pub fn linsert_after(key: String, pivot: String, value: String) {
+  ["LINSERT", key, "AFTER", pivot, value]
+  |> prepare
+}
+
+pub fn linsert_before(key: String, pivot: String, value: String) {
+  ["LINSERT", key, "BEFORE", pivot, value]
+  |> prepare
+}

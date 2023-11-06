@@ -104,3 +104,28 @@ pub fn decr_by(key: String, value: Int) {
   ["DECRBY", key, int.to_string(value)]
   |> prepare
 }
+
+pub fn random_key() {
+  ["RANDOMKEY"]
+  |> prepare
+}
+
+pub fn key_type(key: String) {
+  ["TYPE", key]
+  |> prepare
+}
+
+pub fn rename(key: String, new_key: String) {
+  ["RENAME", key, new_key]
+  |> prepare
+}
+
+pub fn renamex(key: String, new_key: String) {
+  ["RENAMEX", key, new_key]
+  |> prepare
+}
+
+pub fn persist(key: String) {
+  ["PERSIST", key]
+  |> prepare
+}
