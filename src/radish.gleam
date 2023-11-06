@@ -116,7 +116,6 @@ pub fn set(
     option.None -> command.set(key, value, [])
     option.Some(ttl) -> command.set(key, value, [command.PX(ttl)])
   }
-  command.set(key, value, [])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -139,7 +138,6 @@ pub fn set_new(
     option.None -> command.set(key, value, [command.NX])
     option.Some(ttl) -> command.set(key, value, [command.NX, command.PX(ttl)])
   }
-  command.set(key, value, [command.NX])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
