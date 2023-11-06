@@ -4,8 +4,8 @@ import gleam/list
 import gleam/float
 import gleam/result
 import gleam/bit_array
-import radish/error
 import radish/resp
+import radish/error
 
 pub fn decode(value: BitArray) -> Result(resp.Value, error.Error) {
   decode_internal(value)
@@ -21,6 +21,7 @@ pub fn decode(value: BitArray) -> Result(resp.Value, error.Error) {
 
 fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
   case value {
+    <<>> -> Error(Nil)
     <<"_\r\n":utf8, rest:bits>> -> Ok(#(resp.Null, rest))
     <<",nan\r\n":utf8, rest:bits>> -> Ok(#(resp.Nan, rest))
     <<",inf\r\n":utf8, rest:bits>> -> Ok(#(resp.Infinity, rest))

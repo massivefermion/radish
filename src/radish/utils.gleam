@@ -4,7 +4,6 @@ import gleam/erlang/process
 import radish/error
 import radish/client
 import radish/encoder.{encode}
-import radish/decoder.{decode}
 import radish/resp.{Array, BulkString}
 
 pub fn prepare(parts: List(String)) {
@@ -24,16 +23,10 @@ pub fn execute(
     |> result.replace_error(error.ActorError),
   )
 
-  use reply <- result.then(
-    reply
-    |> result.map_error(fn(tcp_error) { error.TCPError(tcp_error) }),
-  )
-
-  use reply <- result.then(decode(reply))
-
+  use reply <- result.then(reply)
   case reply {
-    value -> Ok(value)
     resp.SimpleError(error) | resp.BulkError(error) ->
       Error(error.ServerError(error))
+    value -> Ok(value)
   }
 }
