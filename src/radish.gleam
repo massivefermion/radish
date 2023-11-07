@@ -7,11 +7,16 @@ import gleam/erlang/process
 import radish/resp
 import radish/error
 import radish/client
-import radish/command
+import radish/command.{type ExpireCondition, GT, LT, NX, XX}
 import radish/utils.{execute}
 
-pub type ExpireCondition =
-  command.ExpireCondition
+pub const nx = NX
+
+pub const xx = XX
+
+pub const gt = GT
+
+pub const lt = LT
 
 pub fn start(host: String, port: Int, timeout: Int) {
   use client <- result.then(client.start(host, port, timeout))
