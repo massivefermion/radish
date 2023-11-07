@@ -10,6 +10,9 @@ import radish/client
 import radish/command
 import radish/utils.{execute}
 
+pub type ExpireCondition =
+  command.ExpireCondition
+
 pub fn start(host: String, port: Int, timeout: Int) {
   use client <- result.then(client.start(host, port, timeout))
 
@@ -27,6 +30,7 @@ pub fn shutdown(client) {
   process.send(client, client.Shutdown)
 }
 
+/// see [here](https://redis.io/commands/keys)!
 pub fn keys(client, pattern: String, timeout: Int) {
   command.keys(pattern)
   |> execute(client, _, timeout)
@@ -48,6 +52,7 @@ pub fn keys(client, pattern: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/exists)!
 pub fn exists(client, keys: List(String), timeout: Int) {
   command.exists(keys)
   |> execute(client, _, timeout)
@@ -60,6 +65,7 @@ pub fn exists(client, keys: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/get)!
 pub fn get(client, key: String, timeout: Int) {
   command.get(key)
   |> execute(client, _, timeout)
@@ -72,6 +78,7 @@ pub fn get(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/mget)!
 pub fn mget(client, keys: List(String), timeout: Int) {
   command.mget(keys)
   |> execute(client, _, timeout)
@@ -93,6 +100,7 @@ pub fn mget(client, keys: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/append)!
 pub fn append(client, key: String, value: String, timeout: Int) {
   command.append(key, value)
   |> execute(client, _, timeout)
@@ -105,17 +113,9 @@ pub fn append(client, key: String, value: String, timeout: Int) {
   |> result.flatten
 }
 
-pub fn set(
-  client,
-  key: String,
-  value: String,
-  ttl: option.Option(Int),
-  timeout: Int,
-) {
-  case ttl {
-    option.None -> command.set(key, value, [])
-    option.Some(ttl) -> command.set(key, value, [command.PX(ttl)])
-  }
+/// see [here](https://redis.io/commands/set)!
+pub fn set(client, key: String, value: String, timeout: Int) {
+  command.set(key, value, [])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -126,18 +126,9 @@ pub fn set(
   |> result.flatten
 }
 
-/// only sets a key if it does not already exist
-pub fn set_new(
-  client,
-  key: String,
-  value: String,
-  ttl: option.Option(Int),
-  timeout: Int,
-) {
-  case ttl {
-    option.None -> command.set(key, value, [command.NX])
-    option.Some(ttl) -> command.set(key, value, [command.NX, command.PX(ttl)])
-  }
+/// see [here](https://redis.io/commands/set)!
+pub fn set_new(client, key: String, value: String, timeout: Int) {
+  command.set(key, value, [command.SNX])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -148,19 +139,9 @@ pub fn set_new(
   |> result.flatten
 }
 
-/// only sets a key if it already exists, returns the old value
-pub fn set_existing(
-  client,
-  key: String,
-  value: String,
-  ttl: option.Option(Int),
-  timeout: Int,
-) {
-  case ttl {
-    option.None -> command.set(key, value, [command.XX, command.GET])
-    option.Some(ttl) ->
-      command.set(key, value, [command.XX, command.GET, command.PX(ttl)])
-  }
+/// see [here](https://redis.io/commands/set)!
+pub fn set_existing(client, key: String, value: String, timeout: Int) {
+  command.set(key, value, [command.SXX, command.GET])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -171,6 +152,7 @@ pub fn set_existing(
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/mset)!
 pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
   command.mset(kv_list)
   |> execute(client, _, timeout)
@@ -183,6 +165,7 @@ pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/del)!
 pub fn del(client, keys: List(String), timeout: Int) {
   command.del(keys)
   |> execute(client, _, timeout)
@@ -195,7 +178,7 @@ pub fn del(client, keys: List(String), timeout: Int) {
   |> result.flatten
 }
 
-/// adds 1 to an integer and returns the new value
+/// see [here](https://redis.io/commands/incr)!
 pub fn incr(client, key: String, timeout: Int) {
   command.incr(key)
   |> execute(client, _, timeout)
@@ -208,7 +191,7 @@ pub fn incr(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
-/// adds an arbitrary value to an integer and returns the new value
+/// see [here](https://redis.io/commands/incrby)!
 pub fn incr_by(client, key: String, value: Int, timeout: Int) {
   command.incr_by(key, value)
   |> execute(client, _, timeout)
@@ -221,7 +204,7 @@ pub fn incr_by(client, key: String, value: Int, timeout: Int) {
   |> result.flatten
 }
 
-/// adds an arbitrary float value to a number and returns the new value
+/// see [here](https://redis.io/commands/incrbyfloat)!
 pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
   command.incr_by_float(key, value)
   |> execute(client, _, timeout)
@@ -236,7 +219,7 @@ pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
   |> result.flatten
 }
 
-/// subtracts 1 from an integer and returns the new value
+/// see [here](https://redis.io/commands/decr)!
 pub fn decr(client, key: String, timeout: Int) {
   command.decr(key)
   |> execute(client, _, timeout)
@@ -249,7 +232,7 @@ pub fn decr(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
-/// subtracts an arbitrary value from an integer and returns the new value
+/// see [here](https://redis.io/commands/decrby)!
 pub fn decr_by(client, key: String, value: Int, timeout: Int) {
   command.decr_by(key, value)
   |> execute(client, _, timeout)
@@ -262,6 +245,7 @@ pub fn decr_by(client, key: String, value: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/randomkey)!
 pub fn random_key(client, timeout: Int) {
   command.random_key()
   |> execute(client, _, timeout)
@@ -275,6 +259,7 @@ pub fn random_key(client, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/type)!
 pub fn key_type(client, key: String, timeout: Int) {
   command.key_type(key)
   |> execute(client, _, timeout)
@@ -287,6 +272,7 @@ pub fn key_type(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/rename)!
 pub fn rename(client, key: String, new_key: String, timeout: Int) {
   command.rename(key, new_key)
   |> execute(client, _, timeout)
@@ -299,8 +285,9 @@ pub fn rename(client, key: String, new_key: String, timeout: Int) {
   |> result.flatten
 }
 
-pub fn renamex(client, key: String, new_key: String, timeout: Int) {
-  command.renamex(key, new_key)
+/// see [here](https://redis.io/commands/renamenx)!
+pub fn renamenx(client, key: String, new_key: String, timeout: Int) {
+  command.renamenx(key, new_key)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -311,8 +298,41 @@ pub fn renamex(client, key: String, new_key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/persist)!
 pub fn persist(client, key: String, timeout: Int) {
   command.persist(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/expire)!
+pub fn expire(client, key: String, ttl: Int, timeout: Int) {
+  command.expire(key, ttl, option.None)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Integer(n) -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/expire)!
+pub fn expire_if(
+  client,
+  key: String,
+  ttl: Int,
+  condition: ExpireCondition,
+  timeout: Int,
+) {
+  command.expire(key, ttl, option.Some(condition))
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {

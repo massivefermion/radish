@@ -6,6 +6,7 @@ import radish/error
 import radish/utils.{execute}
 import radish/command/list as command
 
+/// see [here](https://redis.io/commands/lpush)!
 pub fn lpush(client, key: String, values: List(String), timeout: Int) {
   command.lpush(key, values)
   |> execute(client, _, timeout)
@@ -18,6 +19,7 @@ pub fn lpush(client, key: String, values: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/rpush)!
 pub fn rpush(client, key: String, values: List(String), timeout: Int) {
   command.rpush(key, values)
   |> execute(client, _, timeout)
@@ -30,6 +32,7 @@ pub fn rpush(client, key: String, values: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lpushx)!
 pub fn lpushx(client, key: String, values: List(String), timeout: Int) {
   command.lpushx(key, values)
   |> execute(client, _, timeout)
@@ -42,6 +45,7 @@ pub fn lpushx(client, key: String, values: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/rpushx)!
 pub fn rpushx(client, key: String, values: List(String), timeout: Int) {
   command.rpushx(key, values)
   |> execute(client, _, timeout)
@@ -54,6 +58,7 @@ pub fn rpushx(client, key: String, values: List(String), timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/llen)!
 pub fn llen(client, key: String, timeout: Int) {
   command.llen(key)
   |> execute(client, _, timeout)
@@ -66,6 +71,7 @@ pub fn llen(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lrange)!
 pub fn lrange(client, key: String, start: Int, end: Int, timeout: Int) {
   command.lrange(key, start, end)
   |> execute(client, _, timeout)
@@ -87,6 +93,7 @@ pub fn lrange(client, key: String, start: Int, end: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lpop)!
 pub fn lpop(client, key: String, timeout: Int) {
   command.lpop(key, option.None)
   |> execute(client, _, timeout)
@@ -99,6 +106,7 @@ pub fn lpop(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/rpop)!
 pub fn rpop(client, key: String, timeout: Int) {
   command.rpop(key, option.None)
   |> execute(client, _, timeout)
@@ -111,6 +119,7 @@ pub fn rpop(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lpop)!
 pub fn lpop_multiple(client, key: String, count: Int, timeout: Int) {
   command.lpop(key, option.Some(count))
   |> execute(client, _, timeout)
@@ -132,6 +141,7 @@ pub fn lpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/rpop)!
 pub fn rpop_multiple(client, key: String, count: Int, timeout: Int) {
   command.rpop(key, option.Some(count))
   |> execute(client, _, timeout)
@@ -153,6 +163,7 @@ pub fn rpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lindex)!
 pub fn lindex(client, key: String, index: Int, timeout: Int) {
   command.lindex(key, index)
   |> execute(client, _, timeout)
@@ -165,6 +176,7 @@ pub fn lindex(client, key: String, index: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lrem)!
 pub fn lrem(client, key: String, count: Int, value: String, timeout: Int) {
   command.lrem(key, count, value)
   |> execute(client, _, timeout)
@@ -177,6 +189,7 @@ pub fn lrem(client, key: String, count: Int, value: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/lset)!
 pub fn lset(client, key: String, index: Int, value: String, timeout: Int) {
   command.lset(key, index, value)
   |> execute(client, _, timeout)
@@ -189,6 +202,7 @@ pub fn lset(client, key: String, index: Int, value: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/linsert)!
 pub fn linsert_after(
   client,
   key: String,
@@ -207,6 +221,7 @@ pub fn linsert_after(
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/linsert)!
 pub fn linsert_before(
   client,
   key: String,

@@ -23,22 +23,22 @@ gleam add radish
 ## <img width=32 src="https://raw.githubusercontent.com/massivefermion/radish/main/icon.png"> Usage
 
 ```gleam
-import gleam/option
 import radish
 import radish/list
 
 pub fn main() {
-  let assert Ok(client) = radish.start("localhost", 6379, 1024)
+  let assert Ok(client) = radish.start("localhost", 6379, 512)
 
-  radish.set(client, "requests", "64", option.Some(60_000), 1024)
-  radish.decr(client, "requests", 1024)
+  radish.set(client, "requests", "64", 128)
+  radish.expire(client, "requests", 60, 128)
+  radish.decr(client, "requests", 128)
 
   list.lpush(
     client,
     "names",
     ["Gary", "Andy", "Nicholas", "Danny", "Shaun", "Ed"],
-    1024,
+    128,
   )
-  list.lpop(client, "names", 1024)
+  list.lpop(client, "names", 128)
 }
 ```

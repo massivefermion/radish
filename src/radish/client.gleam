@@ -34,8 +34,7 @@ fn handle_message(msg: Message, socket: mug.Socket) {
       case tcp.send(socket, cmd) {
         Ok(Nil) -> {
           let selector = tcp.new_selector()
-          let start_time = now()
-          case receive(socket, selector, <<>>, start_time, timeout) {
+          case receive(socket, selector, <<>>, now(), timeout) {
             Ok(reply) -> {
               actor.send(reply_with, Ok(reply))
               actor.continue(socket)
@@ -73,8 +72,7 @@ fn receive(
   case decode(storage) {
     Ok(value) -> Ok(value)
     Error(error) -> {
-      let now = now()
-      case diff(now, start_time) >= timeout * 1000 {
+      case diff(now(), start_time) >= timeout * 1000 {
         True -> Error(error)
         False ->
           case tcp.receive(socket, selector, timeout) {

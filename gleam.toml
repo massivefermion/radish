@@ -1,5 +1,5 @@
 name = "radish"
-version = "0.4.1"
+version = "0.5.0"
 
 description = "A Redis client for Gleam"
 gleam = ">= 0.32.0"
@@ -23,9 +23,9 @@ internal_modules = [
 
 [dependencies]
 gleam_erlang = "~> 0.23"
-gleam_otp = "~> 0.7"
+gleam_otp = "~> 0.8"
 gleam_stdlib = "~> 0.32"
-mug = "~> 0.1"
+mug = "~> 0.2"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

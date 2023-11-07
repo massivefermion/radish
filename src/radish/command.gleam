@@ -1,17 +1,25 @@
 import gleam/int
 import gleam/list
 import gleam/float
+import gleam/option
 import radish/utils.{prepare}
 
 pub type SetOption {
-  NX
-  XX
+  SNX
+  SXX
   GET
   KEEPTTL
   EX(Int)
   PX(Int)
   EXAT(Int)
   PXAT(Int)
+}
+
+pub type ExpireCondition {
+  NX
+  XX
+  GT
+  LT
 }
 
 pub fn hello(protocol: Int) {
@@ -52,8 +60,8 @@ pub fn set(key: String, value: String, options: List(SetOption)) {
     ["SET", key, value],
     fn(cmd, option) {
       case option {
-        NX -> list.append(cmd, ["NX"])
-        XX -> list.append(cmd, ["XX"])
+        SNX -> list.append(cmd, ["NX"])
+        SXX -> list.append(cmd, ["XX"])
         GET -> list.append(cmd, ["GET"])
         KEEPTTL -> list.append(cmd, ["KEEPTTL"])
         EX(value) -> list.append(cmd, ["EX", int.to_string(value)])
@@ -120,12 +128,23 @@ pub fn rename(key: String, new_key: String) {
   |> prepare
 }
 
-pub fn renamex(key: String, new_key: String) {
-  ["RENAMEX", key, new_key]
+pub fn renamenx(key: String, new_key: String) {
+  ["RENAMENX", key, new_key]
   |> prepare
 }
 
 pub fn persist(key: String) {
   ["PERSIST", key]
+  |> prepare
+}
+
+pub fn expire(key: String, ttl: Int, expire_if: option.Option(ExpireCondition)) {
+  case expire_if {
+    option.None -> ["EXPIRE", key, int.to_string(ttl)]
+    option.Some(NX) -> ["EXPIRE", key, int.to_string(ttl), "NX"]
+    option.Some(XX) -> ["EXPIRE", key, int.to_string(ttl), "XX"]
+    option.Some(GT) -> ["EXPIRE", key, int.to_string(ttl), "GT"]
+    option.Some(LT) -> ["EXPIRE", key, int.to_string(ttl), "LT"]
+  }
   |> prepare
 }
