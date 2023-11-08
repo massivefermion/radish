@@ -1,3 +1,5 @@
+//// All timeouts are in milliseconds
+
 import gleam/list
 import gleam/float
 import gleam/option

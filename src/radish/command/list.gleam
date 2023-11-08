@@ -1,5 +1,6 @@
 import gleam/int
 import gleam/list
+import gleam/float
 import gleam/option
 import radish/utils.{prepare}
 
@@ -46,9 +47,18 @@ pub fn lpop(key: String, count: option.Option(Int)) {
 }
 
 pub fn blpop(keys: List(String), timeout: Int) {
+  let assert Ok(timeout) =
+    timeout
+    |> int.to_float
+    |> float.divide(1000.0)
+
   ["BLPOP"]
   |> list.append(keys)
-  |> list.append([int.to_string(timeout)])
+  |> list.append([
+    timeout
+    |> float.round
+    |> int.to_string,
+  ])
   |> prepare
 }
 
@@ -61,9 +71,18 @@ pub fn rpop(key: String, count: option.Option(Int)) {
 }
 
 pub fn brpop(keys: List(String), timeout: Int) {
+  let assert Ok(timeout) =
+    timeout
+    |> int.to_float
+    |> float.divide(1000.0)
+
   ["BRPOP"]
   |> list.append(keys)
-  |> list.append([int.to_string(timeout)])
+  |> list.append([
+    timeout
+    |> float.round
+    |> int.to_string,
+  ])
   |> prepare
 }
 

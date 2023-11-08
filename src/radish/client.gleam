@@ -129,7 +129,8 @@ fn receive_forever(
 ) {
   case decode(storage) {
     Ok(value) -> Ok(value)
-    Error(error) -> {
+
+    Error(error) if timeout != 0 -> {
       case diff(now(), start_time) >= timeout * 1000 {
         True -> Error(error)
         False ->
@@ -144,6 +145,20 @@ fn receive_forever(
                 timeout,
               )
           }
+      }
+    }
+
+    Error(_) -> {
+      case tcp.receive_forever(socket, selector) {
+        Error(tcp_error) -> Error(error.TCPError(tcp_error))
+        Ok(packet) ->
+          receive_forever(
+            socket,
+            selector,
+            bit_array.append(storage, packet),
+            start_time,
+            timeout,
+          )
       }
     }
   }
