@@ -5,25 +5,25 @@ import radish/utils.{prepare}
 
 pub fn lpush(key: String, values: List(String)) {
   ["LPUSH", key]
-  |> list.append(list.map(values, fn(value) { value }))
+  |> list.append(values)
   |> prepare
 }
 
 pub fn rpush(key: String, values: List(String)) {
   ["RPUSH", key]
-  |> list.append(list.map(values, fn(value) { value }))
+  |> list.append(values)
   |> prepare
 }
 
 pub fn lpushx(key: String, values: List(String)) {
   ["LPUSHX", key]
-  |> list.append(list.map(values, fn(value) { value }))
+  |> list.append(values)
   |> prepare
 }
 
 pub fn rpushx(key: String, values: List(String)) {
   ["RPUSHX", key]
-  |> list.append(list.map(values, fn(value) { value }))
+  |> list.append(values)
   |> prepare
 }
 
@@ -45,11 +45,25 @@ pub fn lpop(key: String, count: option.Option(Int)) {
   |> prepare
 }
 
+pub fn blpop(keys: List(String), timeout: Int) {
+  ["BLPOP"]
+  |> list.append(keys)
+  |> list.append([int.to_string(timeout)])
+  |> prepare
+}
+
 pub fn rpop(key: String, count: option.Option(Int)) {
   case count {
     option.None -> ["RPOP", key]
     option.Some(count) -> ["RPOP", key, int.to_string(count)]
   }
+  |> prepare
+}
+
+pub fn brpop(keys: List(String), timeout: Int) {
+  ["BRPOP"]
+  |> list.append(keys)
+  |> list.append([int.to_string(timeout)])
   |> prepare
 }
 

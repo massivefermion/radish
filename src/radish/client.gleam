@@ -4,13 +4,14 @@ import gleam/otp/actor
 import gleam/erlang/process
 import radish/tcp
 import radish/error
-import radish/resp.{type Value}
 import radish/decoder.{decode}
+import radish/resp.{type Value}
 import mug.{type Error}
 
 pub type Message {
   Shutdown
   Command(BitArray, process.Subject(Result(Value, error.Error)), Int)
+  BlockingCommand(BitArray, process.Subject(Result(Value, error.Error)), Int)
 }
 
 pub fn start(host: String, port: Int, timeout: Int) {
@@ -55,6 +56,34 @@ fn handle_message(msg: Message, socket: mug.Socket) {
         }
       }
     }
+
+    BlockingCommand(cmd, reply_with, timeout) -> {
+      case tcp.send(socket, cmd) {
+        Ok(Nil) -> {
+          let selector = tcp.new_selector()
+
+          case receive_forever(socket, selector, <<>>, now(), timeout) {
+            Ok(reply) -> {
+              actor.send(reply_with, Ok(reply))
+              actor.continue(socket)
+            }
+
+            Error(error) -> {
+              let _ = mug.shutdown(socket)
+              actor.send(reply_with, Error(error))
+              actor.Stop(process.Abnormal("TCP Error"))
+            }
+          }
+        }
+
+        Error(error) -> {
+          let _ = mug.shutdown(socket)
+          actor.send(reply_with, Error(error.TCPError(error)))
+          actor.Stop(process.Abnormal("TCP Error"))
+        }
+      }
+    }
+
     Shutdown -> {
       let _ = mug.shutdown(socket)
       actor.Stop(process.Normal)
@@ -79,6 +108,35 @@ fn receive(
             Error(tcp_error) -> Error(error.TCPError(tcp_error))
             Ok(packet) ->
               receive(
+                socket,
+                selector,
+                bit_array.append(storage, packet),
+                start_time,
+                timeout,
+              )
+          }
+      }
+    }
+  }
+}
+
+fn receive_forever(
+  socket: mug.Socket,
+  selector: process.Selector(Result(BitArray, mug.Error)),
+  storage: BitArray,
+  start_time: #(Int, Int, Int),
+  timeout: Int,
+) {
+  case decode(storage) {
+    Ok(value) -> Ok(value)
+    Error(error) -> {
+      case diff(now(), start_time) >= timeout * 1000 {
+        True -> Error(error)
+        False ->
+          case tcp.receive_forever(socket, selector) {
+            Error(tcp_error) -> Error(error.TCPError(tcp_error))
+            Ok(packet) ->
+              receive_forever(
                 socket,
                 selector,
                 bit_array.append(storage, packet),

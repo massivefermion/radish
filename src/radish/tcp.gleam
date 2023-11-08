@@ -27,6 +27,14 @@ pub fn receive(
   |> result.flatten
 }
 
+pub fn receive_forever(
+  socket: mug.Socket,
+  selector: process.Selector(Result(BitArray, mug.Error)),
+) {
+  mug.receive_next_packet_as_message(socket)
+  process.select_forever(selector)
+}
+
 fn mapper(message: mug.TcpMessage) -> Result(BitArray, mug.Error) {
   case message {
     mug.Packet(_, packet) -> Ok(packet)

@@ -34,7 +34,7 @@ pub fn keys(pattern: String) {
 
 pub fn exists(keys: List(String)) {
   ["EXISTS"]
-  |> list.append(list.map(keys, fn(key) { key }))
+  |> list.append(keys)
   |> prepare
 }
 
@@ -45,7 +45,7 @@ pub fn get(key: String) {
 
 pub fn mget(keys: List(String)) {
   ["MGET"]
-  |> list.append(list.map(keys, fn(key) { key }))
+  |> list.append(keys)
   |> prepare
 }
 
@@ -84,7 +84,7 @@ pub fn mset(kv_list: List(#(String, String))) {
 
 pub fn del(keys: List(String)) {
   ["DEL"]
-  |> list.append(list.map(keys, fn(key) { key }))
+  |> list.append(keys)
   |> prepare
 }
 

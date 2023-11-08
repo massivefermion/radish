@@ -1,5 +1,6 @@
 import gleam/list
 import gleam/result
+import gleam/function
 import gleam/erlang/process
 import radish/error
 import radish/client
@@ -28,5 +29,26 @@ pub fn execute(
     resp.SimpleError(error) | resp.BulkError(error) ->
       Error(error.ServerError(error))
     value -> Ok(value)
+  }
+}
+
+pub fn execute_blocking(
+  client: process.Subject(client.Message),
+  cmd: BitArray,
+  timeout: Int,
+) {
+  let my_subject = process.new_subject()
+  process.send(client, client.BlockingCommand(cmd, my_subject, timeout))
+
+  process.new_selector()
+  |> process.selecting(my_subject, function.identity)
+  |> process.select_forever
+  |> fn(reply) {
+    case reply {
+      Ok(resp.SimpleError(error)) | Ok(resp.BulkError(error)) ->
+        Error(error.ServerError(error))
+      Ok(value) -> Ok(value)
+      Error(error) -> Error(error)
+    }
   }
 }

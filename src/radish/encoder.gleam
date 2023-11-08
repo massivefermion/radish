@@ -110,7 +110,7 @@ fn array(value: List(resp.Value)) {
     |> list.length
     |> int.to_string
   } <> "\r\n" <> {
-    list.map(value, fn(item) { encode_internal(item) })
+    list.map(value, encode_internal)
     |> string.join("")
   }
 }
@@ -135,7 +135,7 @@ fn push(value: List(resp.Value)) {
     |> list.length
     |> int.to_string
   } <> "\r\n" <> {
-    list.map(value, fn(item) { encode_internal(item) })
+    list.map(value, encode_internal)
     |> string.join("")
   }
 }
@@ -147,7 +147,7 @@ fn set(value: set.Set(resp.Value)) {
     |> list.length
     |> int.to_string
   } <> "\r\n" <> {
-    list.map(value, fn(item) { encode_internal(item) })
+    list.map(value, encode_internal)
     |> string.join("")
   }
 }

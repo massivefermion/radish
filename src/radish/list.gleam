@@ -3,8 +3,8 @@ import gleam/result
 import gleam/option
 import radish/resp
 import radish/error
-import radish/utils.{execute}
 import radish/command/list as command
+import radish/utils.{execute, execute_blocking}
 
 /// see [here](https://redis.io/commands/lpush)!
 pub fn lpush(client, key: String, values: List(String), timeout: Int) {
@@ -106,6 +106,27 @@ pub fn lpop(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/blpop)!
+pub fn blpop(client, keys: List(String), timeout: Int) {
+  command.blpop(keys, timeout)
+  |> execute_blocking(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Null -> Ok([])
+      resp.Array(array) ->
+        list.sized_chunk(array, 2)
+        |> list.try_map(fn(kv) {
+          case kv {
+            [resp.BulkString(key), resp.BulkString(value)] -> Ok(#(key, value))
+            _ -> Error(error.RESPError)
+          }
+        })
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
 /// see [here](https://redis.io/commands/rpop)!
 pub fn rpop(client, key: String, timeout: Int) {
   command.rpop(key, option.None)
@@ -113,6 +134,27 @@ pub fn rpop(client, key: String, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       resp.BulkString(str) -> Ok(str)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/brpop)!
+pub fn brpop(client, keys: List(String), timeout: Int) {
+  command.brpop(keys, timeout)
+  |> execute_blocking(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Null -> Ok([])
+      resp.Array(array) ->
+        list.sized_chunk(array, 2)
+        |> list.try_map(fn(kv) {
+          case kv {
+            [resp.BulkString(key), resp.BulkString(value)] -> Ok(#(key, value))
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })
