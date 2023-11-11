@@ -1,4 +1,3 @@
-import gleam/result
 import gleam/bit_array
 import gleam/otp/actor
 import gleam/erlang/process
@@ -15,18 +14,16 @@ pub type Message {
 }
 
 pub fn start(host: String, port: Int, timeout: Int) {
-  use socket <- result.then(
-    tcp.connect(host, port, timeout)
-    |> result.replace_error(actor.InitFailed(process.Abnormal(
-      "Unable to connect to Redis server",
-    ))),
-  )
-
-  use client <- result.then(actor.start(socket, handle_message))
-  let client_pid = process.subject_owner(client)
-  change_socket_owner(socket, client_pid)
-
-  Ok(client)
+  actor.start_spec(actor.Spec(
+    init: fn() {
+      case tcp.connect(host, port, timeout) {
+        Ok(socket) -> actor.Ready(socket, process.new_selector())
+        Error(_) -> actor.Failed("Unable to connect to Redis server")
+      }
+    },
+    init_timeout: timeout,
+    loop: handle_message,
+  ))
 }
 
 fn handle_message(msg: Message, socket: mug.Socket) {
@@ -163,9 +160,6 @@ fn receive_forever(
     }
   }
 }
-
-@external(erlang, "gen_tcp", "controlling_process")
-fn change_socket_owner(socket: mug.Socket, pid: process.Pid) -> b
 
 @external(erlang, "erlang", "now")
 fn now() -> #(Int, Int, Int)

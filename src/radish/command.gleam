@@ -5,21 +5,14 @@ import gleam/option
 import radish/utils.{prepare}
 
 pub type SetOption {
-  SNX
-  SXX
+  NX
+  XX
   GET
   KEEPTTL
   EX(Int)
   PX(Int)
   EXAT(Int)
   PXAT(Int)
-}
-
-pub type ExpireCondition {
-  NX
-  XX
-  GT
-  LT
 }
 
 pub fn hello(protocol: Int) {
@@ -29,6 +22,54 @@ pub fn hello(protocol: Int) {
 
 pub fn keys(pattern: String) {
   ["KEYS", pattern]
+  |> prepare
+}
+
+pub fn scan(cursor: Int, count: Int) {
+  ["SCAN", int.to_string(cursor), "COUNT", int.to_string(count)]
+  |> prepare
+}
+
+pub fn scan_pattern(cursor: Int, pattern: String, count: Int) {
+  [
+    "SCAN",
+    int.to_string(cursor),
+    "MATCH",
+    pattern,
+    "COUNT",
+    int.to_string(count),
+  ]
+  |> prepare
+}
+
+pub fn scan_with_type(cursor: Int, key_type: String, count: Int) {
+  [
+    "SCAN",
+    int.to_string(cursor),
+    "COUNT",
+    int.to_string(count),
+    "TYPE",
+    key_type,
+  ]
+  |> prepare
+}
+
+pub fn scan_pattern_with_type(
+  cursor: Int,
+  key_type: String,
+  pattern: String,
+  count: Int,
+) {
+  [
+    "SCAN",
+    int.to_string(cursor),
+    "MATCH",
+    pattern,
+    "COUNT",
+    int.to_string(count),
+    "TYPE",
+    key_type,
+  ]
   |> prepare
 }
 
@@ -60,8 +101,8 @@ pub fn set(key: String, value: String, options: List(SetOption)) {
     ["SET", key, value],
     fn(cmd, option) {
       case option {
-        SNX -> list.append(cmd, ["NX"])
-        SXX -> list.append(cmd, ["XX"])
+        NX -> list.append(cmd, ["NX"])
+        XX -> list.append(cmd, ["XX"])
         GET -> list.append(cmd, ["GET"])
         KEEPTTL -> list.append(cmd, ["KEEPTTL"])
         EX(value) -> list.append(cmd, ["EX", int.to_string(value)])
@@ -138,13 +179,10 @@ pub fn persist(key: String) {
   |> prepare
 }
 
-pub fn expire(key: String, ttl: Int, expire_if: option.Option(ExpireCondition)) {
+pub fn expire(key: String, ttl: Int, expire_if: option.Option(String)) {
   case expire_if {
     option.None -> ["EXPIRE", key, int.to_string(ttl)]
-    option.Some(NX) -> ["EXPIRE", key, int.to_string(ttl), "NX"]
-    option.Some(XX) -> ["EXPIRE", key, int.to_string(ttl), "XX"]
-    option.Some(GT) -> ["EXPIRE", key, int.to_string(ttl), "GT"]
-    option.Some(LT) -> ["EXPIRE", key, int.to_string(ttl), "LT"]
+    option.Some(condition) -> ["EXPIRE", key, int.to_string(ttl), condition]
   }
   |> prepare
 }

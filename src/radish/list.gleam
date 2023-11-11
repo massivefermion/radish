@@ -61,8 +61,8 @@ pub fn rpushx(client, key: String, values: List(String), timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/llen)!
-pub fn llen(client, key: String, timeout: Int) {
-  command.llen(key)
+pub fn len(client, key: String, timeout: Int) {
+  command.len(key)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -74,8 +74,8 @@ pub fn llen(client, key: String, timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/lrange)!
-pub fn lrange(client, key: String, start: Int, end: Int, timeout: Int) {
-  command.lrange(key, start, end)
+pub fn range(client, key: String, start: Int, end: Int, timeout: Int) {
+  command.range(key, start, end)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -208,8 +208,8 @@ pub fn rpop_multiple(client, key: String, count: Int, timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/lindex)!
-pub fn lindex(client, key: String, index: Int, timeout: Int) {
-  command.lindex(key, index)
+pub fn index(client, key: String, index: Int, timeout: Int) {
+  command.index(key, index)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -221,8 +221,8 @@ pub fn lindex(client, key: String, index: Int, timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/lrem)!
-pub fn lrem(client, key: String, count: Int, value: String, timeout: Int) {
-  command.lrem(key, count, value)
+pub fn rem(client, key: String, count: Int, value: String, timeout: Int) {
+  command.rem(key, count, value)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -234,8 +234,8 @@ pub fn lrem(client, key: String, count: Int, value: String, timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/lset)!
-pub fn lset(client, key: String, index: Int, value: String, timeout: Int) {
-  command.lset(key, index, value)
+pub fn set(client, key: String, index: Int, value: String, timeout: Int) {
+  command.set(key, index, value)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -247,14 +247,14 @@ pub fn lset(client, key: String, index: Int, value: String, timeout: Int) {
 }
 
 /// see [here](https://redis.io/commands/linsert)!
-pub fn linsert_after(
+pub fn insert_after(
   client,
   key: String,
   pivot: String,
   value: String,
   timeout: Int,
 ) {
-  command.linsert_after(key, pivot, value)
+  command.insert_after(key, pivot, value)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -266,14 +266,14 @@ pub fn linsert_after(
 }
 
 /// see [here](https://redis.io/commands/linsert)!
-pub fn linsert_before(
+pub fn insert_before(
   client,
   key: String,
   pivot: String,
   value: String,
   timeout: Int,
 ) {
-  command.linsert_before(key, pivot, value)
+  command.insert_before(key, pivot, value)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {

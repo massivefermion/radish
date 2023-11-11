@@ -1,5 +1,6 @@
 //// All timeouts are in milliseconds
 
+import gleam/int
 import gleam/list
 import gleam/float
 import gleam/option
@@ -10,7 +11,23 @@ import radish/resp
 import radish/error
 import radish/client
 import radish/utils.{execute}
-import radish/command.{type ExpireCondition, GT, LT, NX, XX}
+import radish/command
+
+pub type KeyType {
+  Set
+  List
+  ZSet
+  Hash
+  String
+  Stream
+}
+
+pub type ExpireCondition {
+  NX
+  XX
+  GT
+  LT
+}
 
 pub fn start(host: String, port: Int, timeout: Int) {
   use client <- result.then(client.start(host, port, timeout))
@@ -45,6 +62,151 @@ pub fn keys(client, pattern: String, timeout: Int) {
             }
           },
         )
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/scan)!
+pub fn scan(client, cursor: Int, count: Int, timeout: Int) {
+  command.scan(cursor, count)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+        case int.parse(new_cursor_str) {
+          Ok(new_cursor) -> {
+            use array <- result.then(list.try_map(
+              keys,
+              fn(item) {
+                case item {
+                  resp.BulkString(value) -> Ok(value)
+                  _ -> Error(error.RESPError)
+                }
+              },
+            ))
+            Ok(#(array, new_cursor))
+          }
+          Error(Nil) -> Error(error.RESPError)
+        }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/scan)!
+pub fn scan_pattern(
+  client,
+  cursor: Int,
+  pattern: String,
+  count: Int,
+  timeout: Int,
+) {
+  command.scan_pattern(cursor, pattern, count)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+        case int.parse(new_cursor_str) {
+          Ok(new_cursor) -> {
+            use array <- result.then(list.try_map(
+              keys,
+              fn(item) {
+                case item {
+                  resp.BulkString(value) -> Ok(value)
+                  _ -> Error(error.RESPError)
+                }
+              },
+            ))
+            Ok(#(array, new_cursor))
+          }
+          Error(Nil) -> Error(error.RESPError)
+        }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/scan)!
+pub fn scan_with_type(
+  client,
+  cursor: Int,
+  key_type: KeyType,
+  count: Int,
+  timeout: Int,
+) {
+  case key_type {
+    Set -> command.scan_with_type(cursor, "set", count)
+    List -> command.scan_with_type(cursor, "list", count)
+    ZSet -> command.scan_with_type(cursor, "zset", count)
+    Hash -> command.scan_with_type(cursor, "hash", count)
+    String -> command.scan_with_type(cursor, "string", count)
+    Stream -> command.scan_with_type(cursor, "stream", count)
+  }
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+        case int.parse(new_cursor_str) {
+          Ok(new_cursor) -> {
+            use array <- result.then(list.try_map(
+              keys,
+              fn(item) {
+                case item {
+                  resp.BulkString(value) -> Ok(value)
+                  _ -> Error(error.RESPError)
+                }
+              },
+            ))
+            Ok(#(array, new_cursor))
+          }
+          Error(Nil) -> Error(error.RESPError)
+        }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/scan)!
+pub fn scan_pattern_with_type(
+  client,
+  cursor: Int,
+  key_type: KeyType,
+  pattern: String,
+  count: Int,
+  timeout: Int,
+) {
+  case key_type {
+    Set -> command.scan_pattern_with_type(cursor, "set", pattern, count)
+    List -> command.scan_pattern_with_type(cursor, "list", pattern, count)
+    ZSet -> command.scan_pattern_with_type(cursor, "zset", pattern, count)
+    Hash -> command.scan_pattern_with_type(cursor, "hash", pattern, count)
+    String -> command.scan_pattern_with_type(cursor, "string", pattern, count)
+    Stream -> command.scan_pattern_with_type(cursor, "stream", pattern, count)
+  }
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+        case int.parse(new_cursor_str) {
+          Ok(new_cursor) -> {
+            use array <- result.then(list.try_map(
+              keys,
+              fn(item) {
+                case item {
+                  resp.BulkString(value) -> Ok(value)
+                  _ -> Error(error.RESPError)
+                }
+              },
+            ))
+            Ok(#(array, new_cursor))
+          }
+          Error(Nil) -> Error(error.RESPError)
+        }
       _ -> Error(error.RESPError)
     }
   })
@@ -127,7 +289,7 @@ pub fn set(client, key: String, value: String, timeout: Int) {
 
 /// see [here](https://redis.io/commands/set)!
 pub fn set_new(client, key: String, value: String, timeout: Int) {
-  command.set(key, value, [command.SNX])
+  command.set(key, value, [command.NX])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -140,7 +302,7 @@ pub fn set_new(client, key: String, value: String, timeout: Int) {
 
 /// see [here](https://redis.io/commands/set)!
 pub fn set_existing(client, key: String, value: String, timeout: Int) {
-  command.set(key, value, [command.SXX, command.GET])
+  command.set(key, value, [command.XX, command.GET])
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
@@ -264,7 +426,16 @@ pub fn key_type(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) -> Ok(str)
+      resp.SimpleString(str) ->
+        case str {
+          "set" -> Set
+          "list" -> List
+          "zset" -> ZSet
+          "hash" -> Hash
+          "string" -> String
+          "stream" -> Stream
+        }
+        |> Ok
       _ -> Error(error.RESPError)
     }
   })
@@ -323,14 +494,6 @@ pub fn expire(client, key: String, ttl: Int, timeout: Int) {
   |> result.flatten
 }
 
-pub const nx = NX
-
-pub const xx = XX
-
-pub const gt = GT
-
-pub const lt = LT
-
 /// see [here](https://redis.io/commands/expire)!
 pub fn expire_if(
   client,
@@ -339,7 +502,12 @@ pub fn expire_if(
   condition: ExpireCondition,
   timeout: Int,
 ) {
-  command.expire(key, ttl, option.Some(condition))
+  case condition {
+    NX -> command.expire(key, ttl, option.Some("NX"))
+    XX -> command.expire(key, ttl, option.Some("XX"))
+    GT -> command.expire(key, ttl, option.Some("GT"))
+    LT -> command.expire(key, ttl, option.Some("LT"))
+  }
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {

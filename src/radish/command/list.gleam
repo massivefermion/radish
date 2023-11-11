@@ -28,12 +28,12 @@ pub fn rpushx(key: String, values: List(String)) {
   |> prepare
 }
 
-pub fn llen(key: String) {
+pub fn len(key: String) {
   ["LLEN", key]
   |> prepare
 }
 
-pub fn lrange(key: String, start: Int, end: Int) {
+pub fn range(key: String, start: Int, end: Int) {
   ["LRANGE", key, int.to_string(start), int.to_string(end)]
   |> prepare
 }
@@ -86,27 +86,27 @@ pub fn brpop(keys: List(String), timeout: Int) {
   |> prepare
 }
 
-pub fn lindex(key: String, index: Int) {
+pub fn index(key: String, index: Int) {
   ["LINDEX", key, int.to_string(index)]
   |> prepare
 }
 
-pub fn lrem(key: String, count: Int, value: String) {
+pub fn rem(key: String, count: Int, value: String) {
   ["LREM", key, int.to_string(count), value]
   |> prepare
 }
 
-pub fn lset(key: String, index: Int, value: String) {
+pub fn set(key: String, index: Int, value: String) {
   ["LSET", key, int.to_string(index), value]
   |> prepare
 }
 
-pub fn linsert_after(key: String, pivot: String, value: String) {
+pub fn insert_after(key: String, pivot: String, value: String) {
   ["LINSERT", key, "AFTER", pivot, value]
   |> prepare
 }
 
-pub fn linsert_before(key: String, pivot: String, value: String) {
+pub fn insert_before(key: String, pivot: String, value: String) {
   ["LINSERT", key, "BEFORE", pivot, value]
   |> prepare
 }
