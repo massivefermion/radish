@@ -22,12 +22,13 @@ pub fn decode(value: BitArray) -> Result(resp.Value, error.Error) {
 fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
   case value {
     <<>> -> Error(Nil)
+
     <<"_\r\n":utf8, rest:bits>> -> Ok(#(resp.Null, rest))
     <<",nan\r\n":utf8, rest:bits>> -> Ok(#(resp.Nan, rest))
     <<",inf\r\n":utf8, rest:bits>> -> Ok(#(resp.Infinity, rest))
     <<"#t\r\n":utf8, rest:bits>> -> Ok(#(resp.Boolean(True), rest))
     <<"#f\r\n":utf8, rest:bits>> -> Ok(#(resp.Boolean(False), rest))
-    <<",-inf\r\n":utf8, rest:bits>> -> Ok(#(resp.NegativeInifnity, rest))
+    <<",-inf\r\n":utf8, rest:bits>> -> Ok(#(resp.NegativeInfinity, rest))
 
     <<":":utf8, rest:bits>> -> {
       use #(value, rest) <- result.then(consume_till_crlf(rest, <<>>))
@@ -76,6 +77,7 @@ fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       #(resp.SimpleError(value), rest)
       |> Ok
     }
+
     <<"(":utf8, rest:bits>> -> {
       use #(value, rest) <- result.then(consume_till_crlf(rest, <<>>))
       use value <- result.then(bit_array.to_string(value))

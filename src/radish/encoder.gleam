@@ -26,7 +26,7 @@ fn encode_internal(value: resp.Value) -> String {
     resp.BigNumber(value) -> big_number(value)
     resp.BulkError(value) -> bulk_error(value)
     resp.BulkString(value) -> bulk_string(value)
-    resp.NegativeInifnity -> negative_infinity()
+    resp.NegativeInfinity -> negative_infinity()
     resp.SimpleError(value) -> simple_error(value)
     resp.SimpleString(value) -> simple_string(value)
     resp.IntegerAsDouble(value) -> integer_as_double(value)

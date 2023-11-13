@@ -1,9 +1,9 @@
 import mug
 
 pub type Error {
+  NotFound
   RESPError
   ActorError
-  EmptyDBError
   ConnectionError
   TCPError(mug.Error)
   ServerError(String)

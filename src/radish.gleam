@@ -413,7 +413,7 @@ pub fn random_key(client, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       resp.BulkString(str) -> Ok(str)
-      resp.Null -> Error(error.EmptyDBError)
+      resp.Null -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })

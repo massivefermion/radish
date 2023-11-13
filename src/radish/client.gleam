@@ -92,13 +92,13 @@ fn receive(
   socket: mug.Socket,
   selector: process.Selector(Result(BitArray, mug.Error)),
   storage: BitArray,
-  start_time: #(Int, Int, Int),
+  start_time: Int,
   timeout: Int,
 ) {
   case decode(storage) {
     Ok(value) -> Ok(value)
     Error(error) -> {
-      case diff(now(), start_time) >= timeout * 1000 {
+      case now() - start_time >= timeout * 1_000_000 {
         True -> Error(error)
         False ->
           case tcp.receive(socket, selector, timeout) {
@@ -121,14 +121,14 @@ fn receive_forever(
   socket: mug.Socket,
   selector: process.Selector(Result(BitArray, mug.Error)),
   storage: BitArray,
-  start_time: #(Int, Int, Int),
+  start_time: Int,
   timeout: Int,
 ) {
   case decode(storage) {
     Ok(value) -> Ok(value)
 
     Error(error) if timeout != 0 -> {
-      case diff(now(), start_time) >= timeout * 1000 {
+      case now() - start_time >= timeout * 1_000_000 {
         True -> Error(error)
         False ->
           case tcp.receive_forever(socket, selector) {
@@ -161,8 +161,5 @@ fn receive_forever(
   }
 }
 
-@external(erlang, "erlang", "now")
-fn now() -> #(Int, Int, Int)
-
-@external(erlang, "timer", "now_diff")
-fn diff(end: #(Int, Int, Int), start: #(Int, Int, Int)) -> Int
+@external(erlang, "erlang", "monotonic_time")
+fn now() -> Int

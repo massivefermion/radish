@@ -8,7 +8,7 @@ pub type Value {
   Boolean(Bool)
   Double(Float)
   BigNumber(Int)
-  NegativeInifnity
+  NegativeInfinity
   Push(List(Value))
   BulkError(String)
   BulkString(String)

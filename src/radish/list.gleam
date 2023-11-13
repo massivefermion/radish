@@ -114,7 +114,6 @@ pub fn blpop(client, keys: List(String), timeout: Int) {
   |> execute_blocking(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Null -> Ok([])
       resp.Array(array) ->
         list.sized_chunk(array, 2)
         |> list.try_map(fn(kv) {
@@ -123,6 +122,7 @@ pub fn blpop(client, keys: List(String), timeout: Int) {
             _ -> Error(error.RESPError)
           }
         })
+      resp.Null -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -148,7 +148,6 @@ pub fn brpop(client, keys: List(String), timeout: Int) {
   |> execute_blocking(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Null -> Ok([])
       resp.Array(array) ->
         list.sized_chunk(array, 2)
         |> list.try_map(fn(kv) {
@@ -157,6 +156,7 @@ pub fn brpop(client, keys: List(String), timeout: Int) {
             _ -> Error(error.RESPError)
           }
         })
+      resp.Null -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
