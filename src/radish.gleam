@@ -52,7 +52,7 @@ pub fn keys(client, pattern: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.try_map(
           array,
           fn(item) {
@@ -74,7 +74,7 @@ pub fn scan(client, cursor: Int, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
@@ -108,7 +108,7 @@ pub fn scan_pattern(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
@@ -149,7 +149,7 @@ pub fn scan_with_type(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
@@ -191,7 +191,7 @@ pub fn scan_pattern_with_type(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
@@ -219,7 +219,7 @@ pub fn exists(client, keys: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -232,7 +232,7 @@ pub fn get(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -245,7 +245,7 @@ pub fn mget(client, keys: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.try_map(
           array,
           fn(item) {
@@ -267,7 +267,7 @@ pub fn append(client, key: String, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -280,7 +280,7 @@ pub fn set(client, key: String, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -293,7 +293,7 @@ pub fn set_new(client, key: String, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -306,7 +306,7 @@ pub fn set_existing(client, key: String, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -319,7 +319,7 @@ pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) | resp.BulkString(str) -> Ok(str)
+      [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -332,7 +332,7 @@ pub fn del(client, keys: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -345,7 +345,7 @@ pub fn incr(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(new) -> Ok(new)
+      [resp.Integer(new)] -> Ok(new)
       _ -> Error(error.RESPError)
     }
   })
@@ -358,7 +358,7 @@ pub fn incr_by(client, key: String, value: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(new) -> Ok(new)
+      [resp.Integer(new)] -> Ok(new)
       _ -> Error(error.RESPError)
     }
   })
@@ -371,7 +371,7 @@ pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.BulkString(new) ->
+      [resp.BulkString(new)] ->
         float.parse(new)
         |> result.replace_error(error.RESPError)
       _ -> Error(error.RESPError)
@@ -386,7 +386,7 @@ pub fn decr(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(new) -> Ok(new)
+      [resp.Integer(new)] -> Ok(new)
       _ -> Error(error.RESPError)
     }
   })
@@ -399,7 +399,7 @@ pub fn decr_by(client, key: String, value: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(new) -> Ok(new)
+      [resp.Integer(new)] -> Ok(new)
       _ -> Error(error.RESPError)
     }
   })
@@ -412,8 +412,8 @@ pub fn random_key(client, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.BulkString(str) -> Ok(str)
-      resp.Null -> Error(error.NotFound)
+      [resp.BulkString(str)] -> Ok(str)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -426,7 +426,7 @@ pub fn key_type(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) ->
+      [resp.SimpleString(str)] ->
         case str {
           "set" -> Set
           "list" -> List
@@ -448,7 +448,7 @@ pub fn rename(client, key: String, new_key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) -> Ok(str)
+      [resp.SimpleString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -461,7 +461,7 @@ pub fn renamenx(client, key: String, new_key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -474,7 +474,7 @@ pub fn persist(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -487,7 +487,7 @@ pub fn expire(client, key: String, ttl: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -511,7 +511,7 @@ pub fn expire_if(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })

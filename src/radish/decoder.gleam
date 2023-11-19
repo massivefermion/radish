@@ -7,19 +7,28 @@ import gleam/bit_array
 import radish/resp
 import radish/error
 
-pub fn decode(value: BitArray) -> Result(resp.Value, error.Error) {
-  decode_internal(value)
+pub fn decode(value: BitArray) -> Result(List(resp.Value), error.Error) {
+  decode_multiple(value, [])
+  |> result.replace_error(error.RESPError)
+}
+
+fn decode_multiple(
+  value: BitArray,
+  storage: List(resp.Value),
+) -> Result(List(resp.Value), error.Error) {
+  decode_message(value)
   |> result.map(fn(value) {
+    let storage = list.append(storage, [value.0])
     case value {
-      #(decoded, <<>>) -> Ok(decoded)
-      _ -> Error(error.RESPError)
+      #(_, <<>>) -> Ok(storage)
+      #(_, rest) -> decode_multiple(rest, storage)
     }
   })
   |> result.replace_error(error.RESPError)
   |> result.flatten
 }
 
-fn decode_internal(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
+fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
   case value {
     <<>> -> Error(Nil)
 
@@ -218,7 +227,7 @@ fn decode_array(data: BitArray, length: Int, storage: List(resp.Value)) {
   case list.length(storage) == length {
     True -> Ok(#(storage, data))
     False -> {
-      use #(item, rest) <- result.then(decode_internal(data))
+      use #(item, rest) <- result.then(decode_message(data))
       decode_array(rest, length, list.append(storage, [item]))
     }
   }
@@ -232,8 +241,8 @@ fn decode_map(
   case list.length(storage) == length {
     True -> Ok(#(storage, data))
     False -> {
-      use #(key, rest) <- result.then(decode_internal(data))
-      use #(value, rest) <- result.then(decode_internal(rest))
+      use #(key, rest) <- result.then(decode_message(data))
+      use #(value, rest) <- result.then(decode_message(rest))
       decode_map(rest, length, list.append(storage, [#(key, value)]))
     }
   }

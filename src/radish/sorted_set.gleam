@@ -24,7 +24,7 @@ pub fn add_new(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -42,7 +42,7 @@ pub fn upsert(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -60,7 +60,7 @@ pub fn upsert_only_lower_scores(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -78,7 +78,7 @@ pub fn upsert_only_higher_scores(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -96,7 +96,7 @@ pub fn update(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -114,7 +114,7 @@ pub fn update_only_lower_scores(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -132,7 +132,7 @@ pub fn update_only_higher_scores(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -159,7 +159,7 @@ pub fn card(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -172,7 +172,7 @@ pub fn count(client, key: String, min: Score, max: Score, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -185,10 +185,10 @@ pub fn score(client, key: String, member: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Infinity -> Ok(Infinity)
-      resp.Double(score) -> Ok(Double(score))
-      resp.NegativeInfinity -> Ok(NegativeInfinity)
-      resp.Null -> Error(error.NotFound)
+      [resp.Infinity] -> Ok(Infinity)
+      [resp.Double(score)] -> Ok(Double(score))
+      [resp.NegativeInfinity] -> Ok(NegativeInfinity)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -201,7 +201,7 @@ pub fn scan(client, key: String, cursor: Int, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(members)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(members)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(
@@ -241,7 +241,7 @@ pub fn scan_pattern(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(members)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(members)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(
@@ -274,7 +274,7 @@ pub fn rem(client, key: String, members: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -287,13 +287,13 @@ pub fn random_members(client, key: String, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(members) -> {
+      [resp.Array(members)] -> {
         use array <- result.then(
           members
           |> list.try_map(fn(item) {
             case item {
               resp.Array([resp.BulkString(member), score]) ->
-                case map_score(score) {
+                case map_score([score]) {
                   Ok(score) -> Ok(#(member, score))
                   _ -> Error(error.RESPError)
                 }
@@ -315,11 +315,11 @@ pub fn rank(client, key: String, member: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.Integer(rank), score]) ->
-        score
+      [resp.Array([resp.Integer(rank), score])] ->
+        [score]
         |> map_score
         |> result.map(fn(score) { #(rank, score) })
-      resp.Null -> Error(error.NotFound)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -332,11 +332,11 @@ pub fn reverse_rank(client, key: String, member: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.Integer(rank), score]) ->
-        score
+      [resp.Array([resp.Integer(rank), score])] ->
+        [score]
         |> map_score
         |> result.map(fn(score) { #(rank, score) })
-      resp.Null -> Error(error.NotFound)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -349,13 +349,13 @@ pub fn pop_min(client, key: String, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(members) -> {
+      [resp.Array(members)] -> {
         use array <- result.then(
           members
           |> list.try_map(fn(item) {
             case item {
               resp.Array([resp.BulkString(member), score]) ->
-                case map_score(score) {
+                case map_score([score]) {
                   Ok(score) -> Ok(#(member, score))
                   _ -> Error(error.RESPError)
                 }
@@ -377,13 +377,13 @@ pub fn pop_max(client, key: String, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(members) -> {
+      [resp.Array(members)] -> {
         use array <- result.then(
           members
           |> list.try_map(fn(item) {
             case item {
               resp.Array([resp.BulkString(member), score]) ->
-                case map_score(score) {
+                case map_score([score]) {
                   Ok(score) -> Ok(#(member, score))
                   _ -> Error(error.RESPError)
                 }
@@ -411,11 +411,11 @@ fn encode_score(score: Score) {
   }
 }
 
-fn map_score(score: resp.Value) {
+fn map_score(score: List(resp.Value)) {
   case score {
-    resp.Infinity -> Ok(Infinity)
-    resp.Double(score) -> Ok(Double(score))
-    resp.NegativeInfinity -> Ok(NegativeInfinity)
+    [resp.Infinity] -> Ok(Infinity)
+    [resp.Double(score)] -> Ok(Double(score))
+    [resp.NegativeInfinity] -> Ok(NegativeInfinity)
     _ -> Error(error.RESPError)
   }
 }

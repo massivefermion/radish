@@ -14,7 +14,7 @@ pub fn lpush(client, key: String, values: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -27,7 +27,7 @@ pub fn rpush(client, key: String, values: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -40,7 +40,7 @@ pub fn lpushx(client, key: String, values: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -53,7 +53,7 @@ pub fn rpushx(client, key: String, values: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -66,7 +66,7 @@ pub fn len(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -79,7 +79,7 @@ pub fn range(client, key: String, start: Int, end: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.try_map(
           array,
           fn(item) {
@@ -101,7 +101,7 @@ pub fn lpop(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.BulkString(str) -> Ok(str)
+      [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -114,7 +114,7 @@ pub fn blpop(client, keys: List(String), timeout: Int) {
   |> execute_blocking(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.sized_chunk(array, 2)
         |> list.try_map(fn(kv) {
           case kv {
@@ -122,7 +122,7 @@ pub fn blpop(client, keys: List(String), timeout: Int) {
             _ -> Error(error.RESPError)
           }
         })
-      resp.Null -> Error(error.NotFound)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -135,7 +135,7 @@ pub fn rpop(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.BulkString(str) -> Ok(str)
+      [resp.BulkString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -148,7 +148,7 @@ pub fn brpop(client, keys: List(String), timeout: Int) {
   |> execute_blocking(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.sized_chunk(array, 2)
         |> list.try_map(fn(kv) {
           case kv {
@@ -156,7 +156,7 @@ pub fn brpop(client, keys: List(String), timeout: Int) {
             _ -> Error(error.RESPError)
           }
         })
-      resp.Null -> Error(error.NotFound)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -169,7 +169,7 @@ pub fn lpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.try_map(
           array,
           fn(item) {
@@ -191,7 +191,7 @@ pub fn rpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array(array) ->
+      [resp.Array(array)] ->
         list.try_map(
           array,
           fn(item) {
@@ -213,7 +213,7 @@ pub fn index(client, key: String, index: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -226,7 +226,7 @@ pub fn rem(client, key: String, count: Int, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -239,7 +239,7 @@ pub fn set(client, key: String, index: Int, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.SimpleString(str) -> Ok(str)
+      [resp.SimpleString(str)] -> Ok(str)
       _ -> Error(error.RESPError)
     }
   })
@@ -258,7 +258,7 @@ pub fn insert_after(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -277,7 +277,7 @@ pub fn insert_before(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })

@@ -9,8 +9,13 @@ import mug.{type Error}
 
 pub type Message {
   Shutdown
-  Command(BitArray, process.Subject(Result(Value, error.Error)), Int)
-  BlockingCommand(BitArray, process.Subject(Result(Value, error.Error)), Int)
+  Command(BitArray, process.Subject(Result(List(Value), error.Error)), Int)
+  BlockingCommand(
+    BitArray,
+    process.Subject(Result(List(Value), error.Error)),
+    Int,
+  )
+  ReceiveForever(process.Subject(Result(List(Value), error.Error)), Int)
 }
 
 pub fn start(host: String, port: Int, timeout: Int) {
@@ -76,6 +81,23 @@ fn handle_message(msg: Message, socket: mug.Socket) {
         Error(error) -> {
           let _ = mug.shutdown(socket)
           actor.send(reply_with, Error(error.TCPError(error)))
+          actor.Stop(process.Abnormal("TCP Error"))
+        }
+      }
+    }
+
+    ReceiveForever(reply_with, timeout) -> {
+      let selector = tcp.new_selector()
+
+      case receive_forever(socket, selector, <<>>, now(), timeout) {
+        Ok(reply) -> {
+          actor.send(reply_with, Ok(reply))
+          actor.continue(socket)
+        }
+
+        Error(error) -> {
+          let _ = mug.shutdown(socket)
+          actor.send(reply_with, Error(error))
           actor.Stop(process.Abnormal("TCP Error"))
         }
       }

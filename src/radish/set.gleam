@@ -15,7 +15,7 @@ pub fn add(client, key: String, values: List(String), timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -28,7 +28,7 @@ pub fn card(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -41,7 +41,7 @@ pub fn is_member(client, key: String, value: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Integer(n) -> Ok(n)
+      [resp.Integer(n)] -> Ok(n)
       _ -> Error(error.RESPError)
     }
   })
@@ -54,7 +54,7 @@ pub fn members(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Set(set) -> {
+      [resp.Set(set)] -> {
         use list <- result.then(
           set
           |> set.to_list
@@ -79,7 +79,7 @@ pub fn scan(client, key: String, cursor: Int, count: Int, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
@@ -114,7 +114,7 @@ pub fn scan_pattern(
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)]) ->
+      [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
             use array <- result.then(list.try_map(
