@@ -233,6 +233,7 @@ pub fn get(client, key: String, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
+      [resp.Null] -> Error(error.NotFound)
       _ -> Error(error.RESPError)
     }
   })
@@ -251,6 +252,7 @@ pub fn mget(client, keys: List(String), timeout: Int) {
           fn(item) {
             case item {
               resp.BulkString(str) -> Ok(str)
+              resp.Null -> Error(error.NotFound)
               _ -> Error(error.RESPError)
             }
           },
