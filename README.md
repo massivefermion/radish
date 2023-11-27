@@ -27,7 +27,7 @@ import radish
 import radish/list
 
 pub fn main() {
-  let assert Ok(client) = radish.start("localhost", 6379, 512)
+  let assert Ok(client) = radish.start("localhost", 6379, [radish.Timeout(128), radish.Auth("password")])
 
   radish.set(client, "requests", "64", 128)
   radish.expire(client, "requests", 60, 128)
