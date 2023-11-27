@@ -5,6 +5,7 @@ import radish/error
 import radish/utils.{execute, execute_blocking, receive_forever}
 import radish/command/pub_sub as command
 
+@deprecated("use radish.Next instead!")
 pub type Next {
   Continue
   UnsubscribeFromAll
@@ -12,6 +13,7 @@ pub type Next {
 }
 
 /// see [here](https://redis.io/commands/publish)!
+@deprecated("use radish.publish instead!")
 pub fn publish(client, channel: String, message: String, timeout: Int) {
   command.publish(channel, message)
   |> execute(client, _, timeout)
@@ -26,6 +28,7 @@ pub fn publish(client, channel: String, message: String, timeout: Int) {
 
 /// see [here](https://redis.io/commands/subscribe)!
 /// Also see [here](https://redis.io/docs/manual/keyspace-notifications)!
+@deprecated("use radish.subscribe instead!")
 pub fn subscribe(
   client,
   channels: List(String),
@@ -80,6 +83,7 @@ pub fn subscribe(
 
 /// see [here](https://redis.io/commands/psubscribe)!
 /// Also see [here](https://redis.io/docs/manual/keyspace-notifications)!
+@deprecated("use radish.subscribe_to_patterns instead!")
 pub fn subscribe_to_patterns(
   client,
   patterns: List(String),

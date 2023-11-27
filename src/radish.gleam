@@ -10,8 +10,14 @@ import gleam/erlang/process
 import radish/resp
 import radish/error
 import radish/client
-import radish/utils.{execute}
+import radish/utils.{execute, execute_blocking, receive_forever}
 import radish/command
+
+pub type StartOption {
+  Timeout(Int)
+  Auth(String)
+  AuthWithUsername(String, String)
+}
 
 pub type KeyType {
   Set
@@ -29,14 +35,45 @@ pub type ExpireCondition {
   LT
 }
 
-pub fn start(host: String, port: Int, timeout: Int) {
+pub fn start(host: String, port: Int, options: List(StartOption)) {
+  let #(timeout, options) = case
+    list.pop_map(
+      options,
+      fn(item) {
+        case item {
+          Timeout(timeout) -> Ok(timeout)
+          _ -> Error(Nil)
+        }
+      },
+    )
+  {
+    Ok(result) -> result
+    Error(Nil) -> #(1024, options)
+  }
+
   use client <- result.then(client.start(host, port, timeout))
 
+  let options =
+    list.map(
+      options,
+      fn(item) {
+        case item {
+          Auth(password) -> command.Auth(password)
+          AuthWithUsername(username, password) ->
+            command.AuthWithUsername(username, password)
+          Timeout(_) -> command.AuthWithUsername("", "")
+        }
+      },
+    )
+
   use _ <- result.then(
-    execute(client, command.hello(3), timeout)
-    |> result.replace_error(actor.InitFailed(process.Abnormal(
-      "Failed to say hello",
-    ))),
+    execute(client, command.hello(3, options), timeout)
+    |> result.map_error(fn(error) {
+      case error {
+        error.ServerError(error) -> actor.InitFailed(process.Abnormal(error))
+        _ -> actor.InitFailed(process.Abnormal("Failed to say hello"))
+      }
+    }),
   )
 
   Ok(client)
@@ -518,4 +555,206 @@ pub fn expire_if(
     }
   })
   |> result.flatten
+}
+
+pub type Next {
+  Continue
+  UnsubscribeFromAll
+  UnsubscribeFrom(List(String))
+}
+
+/// see [here](https://redis.io/commands/publish)!
+pub fn publish(client, channel: String, message: String, timeout: Int) {
+  command.publish(channel, message)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.Integer(n)] -> Ok(n)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/subscribe)!
+/// Also see [here](https://redis.io/docs/manual/keyspace-notifications)!
+pub fn subscribe(
+  client,
+  channels: List(String),
+  init_handler: fn(String, Int) -> Nil,
+  message_handler: fn(String, String) -> Next,
+  timeout: Int,
+) {
+  let _ =
+    command.subscribe(channels)
+    |> execute_blocking(client, _, timeout)
+    |> result.map(fn(value) {
+      list.each(
+        value,
+        fn(item) {
+          case item {
+            resp.Push([
+              resp.BulkString("subscribe"),
+              resp.BulkString(channel),
+              resp.Integer(n),
+            ]) -> Ok(init_handler(channel, n))
+            _ -> Error(error.RESPError)
+          }
+        },
+      )
+    })
+
+  use value <- receive_forever(client, timeout)
+  case value {
+    Ok([
+      resp.Push([
+        resp.BulkString("message"),
+        resp.BulkString(channel),
+        resp.BulkString(message),
+      ]),
+    ]) ->
+      case message_handler(channel, message) {
+        Continue -> True
+        UnsubscribeFromAll -> {
+          let _ = unsubscribe_from_all(client, timeout)
+          False
+        }
+        UnsubscribeFrom(channels) ->
+          case unsubscribe(client, channels, timeout) {
+            Ok(result) -> result
+            Error(_) -> False
+          }
+      }
+
+    _ -> False
+  }
+}
+
+/// see [here](https://redis.io/commands/psubscribe)!
+/// Also see [here](https://redis.io/docs/manual/keyspace-notifications)!
+pub fn subscribe_to_patterns(
+  client,
+  patterns: List(String),
+  init_handler: fn(String, Int) -> Nil,
+  message_handler: fn(String, String, String) -> Next,
+  timeout: Int,
+) {
+  let _ =
+    command.subscribe_to_patterns(patterns)
+    |> execute_blocking(client, _, timeout)
+    |> result.map(fn(value) {
+      list.each(
+        value,
+        fn(item) {
+          case item {
+            resp.Push([
+              resp.BulkString("psubscribe"),
+              resp.BulkString(channel),
+              resp.Integer(n),
+            ]) -> init_handler(channel, n)
+            _ -> Nil
+          }
+        },
+      )
+    })
+
+  use value <- receive_forever(client, timeout)
+  case value {
+    Ok([
+      resp.Push([
+        resp.BulkString("pmessage"),
+        resp.BulkString(pattern),
+        resp.BulkString(channel),
+        resp.BulkString(message),
+      ]),
+    ]) ->
+      case message_handler(pattern, channel, message) {
+        Continue -> True
+        UnsubscribeFromAll -> {
+          let _ = unsubscribe_from_all_patterns(client, timeout)
+          False
+        }
+        UnsubscribeFrom(patterns) -> {
+          case unsubscribe_from_patterns(client, patterns, timeout) {
+            Ok(result) -> result
+            Error(_) -> False
+          }
+        }
+      }
+
+    _ -> False
+  }
+}
+
+fn unsubscribe(client, channels: List(String), timeout: Int) {
+  command.unsubscribe(channels)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    list.all(
+      value,
+      fn(item) {
+        let assert resp.Push([
+          resp.BulkString("unsubscribe"),
+          resp.BulkString(_),
+          resp.Integer(n),
+        ]) = item
+        n > 0
+      },
+    )
+  })
+}
+
+fn unsubscribe_from_all(client, timeout: Int) {
+  command.unsubscribe_from_all()
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    value
+    list.all(
+      value,
+      fn(item) {
+        let assert resp.Push([
+          resp.BulkString("unsubscribe"),
+          resp.BulkString(_),
+          resp.Integer(n),
+        ]) = item
+        n > 0
+      },
+    )
+  })
+}
+
+fn unsubscribe_from_patterns(client, patterns: List(String), timeout: Int) {
+  command.unsubscribe_from_patterns(patterns)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    list.all(
+      value,
+      fn(item) {
+        let assert resp.Push([
+          resp.BulkString("punsubscribe"),
+          resp.BulkString(_),
+          resp.Integer(n),
+        ]) = item
+        n > 0
+      },
+    )
+  })
+}
+
+fn unsubscribe_from_all_patterns(client, timeout: Int) {
+  command.unsubscribe_from_all_patterns()
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    list.all(
+      value,
+      fn(item) {
+        let assert resp.Push([
+          resp.BulkString("punsubscribe"),
+          resp.BulkString(_),
+          resp.Integer(n),
+        ]) = item
+        n > 0
+      },
+    )
+  })
 }

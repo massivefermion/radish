@@ -4,6 +4,11 @@ import gleam/float
 import gleam/option
 import radish/utils.{prepare}
 
+pub type HelloOption {
+  Auth(String)
+  AuthWithUsername(String, String)
+}
+
 pub type SetOption {
   NX
   XX
@@ -15,8 +20,17 @@ pub type SetOption {
   PXAT(Int)
 }
 
-pub fn hello(protocol: Int) {
+pub fn hello(protocol: Int, options: List(HelloOption)) {
   ["HELLO", int.to_string(protocol)]
+  |> list.append(list.flat_map(
+    options,
+    fn(item) {
+      case item {
+        Auth(password) -> ["AUTH", "default", password]
+        AuthWithUsername(username, password) -> ["AUTH", username, password]
+      }
+    },
+  ))
   |> prepare
 }
 
@@ -184,5 +198,44 @@ pub fn expire(key: String, ttl: Int, expire_if: option.Option(String)) {
     option.None -> ["EXPIRE", key, int.to_string(ttl)]
     option.Some(condition) -> ["EXPIRE", key, int.to_string(ttl), condition]
   }
+  |> prepare
+}
+
+pub fn publish(channel: String, message: String) {
+  ["PUBLISH", channel, message]
+  |> prepare
+}
+
+pub fn subscribe(channels: List(String)) {
+  ["SUBSCRIBE"]
+  |> list.append(channels)
+  |> prepare
+}
+
+pub fn subscribe_to_patterns(patterns: List(String)) {
+  ["PSUBSCRIBE"]
+  |> list.append(patterns)
+  |> prepare
+}
+
+pub fn unsubscribe(channels: List(String)) {
+  ["UNSUBSCRIBE"]
+  |> list.append(channels)
+  |> prepare
+}
+
+pub fn unsubscribe_from_all() {
+  ["UNSUBSCRIBE"]
+  |> prepare
+}
+
+pub fn unsubscribe_from_patterns(patterns: List(String)) {
+  ["PUNSUBSCRIBE"]
+  |> list.append(patterns)
+  |> prepare
+}
+
+pub fn unsubscribe_from_all_patterns() {
+  ["PUNSUBSCRIBE"]
   |> prepare
 }
