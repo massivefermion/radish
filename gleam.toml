@@ -1,14 +1,14 @@
 name = "radish"
-version = "0.11.0"
+version = "0.12.0"
 
 description = "A Redis client for Gleam"
 gleam = ">= 0.32.0"
 licences = ["Apache-2.0"]
 links = [
-  {title = "Gleam", href = "https://gleam.run"},
-  {title = "Redis", href = "https://redis.io"},
+  { title = "Gleam", href = "https://gleam.run" },
+  { title = "Redis", href = "https://redis.io" },
 ]
-repository = {type = "github", user = "massivefermion", repo = "radish"}
+repository = { type = "github", user = "massivefermion", repo = "radish" }
 
 internal_modules = [
   "radish/tcp",
@@ -24,7 +24,7 @@ internal_modules = [
 [dependencies]
 gleam_erlang = "~> 0.23"
 gleam_otp = "~> 0.8"
-gleam_stdlib = "~> 0.32"
+gleam_stdlib = "~> 0.33"
 mug = "~> 0.2"
 
 [dev-dependencies]

@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/set
 import gleam/list
+import gleam/dict
 import gleam/float
 import gleam/result
 import gleam/bit_array
@@ -239,7 +240,7 @@ fn decode_map(
   storage: List(#(resp.Value, resp.Value)),
 ) {
   case list.length(storage) == length {
-    True -> Ok(#(storage, data))
+    True -> Ok(#(dict.from_list(storage), data))
     False -> {
       use #(key, rest) <- result.then(decode_message(data))
       use #(value, rest) <- result.then(decode_message(rest))

@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/set
 import gleam/list
+import gleam/dict
 import gleam/float
 import gleam/string
 import gleam/bit_array
@@ -115,16 +116,15 @@ fn array(value: List(resp.Value)) {
   }
 }
 
-fn map(value: List(#(resp.Value, resp.Value))) {
+fn map(value: dict.Dict(resp.Value, resp.Value)) {
   "%" <> {
     value
-    |> list.length
+    |> dict.size
     |> int.to_string
   } <> "\r\n" <> {
-    list.map(
-      value,
-      fn(item) { encode_internal(item.0) <> encode_internal(item.1) },
-    )
+    value
+    |> dict.to_list
+    |> list.map(fn(item) { encode_internal(item.0) <> encode_internal(item.1) })
     |> string.join("")
   }
 }

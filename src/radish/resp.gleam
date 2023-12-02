@@ -1,4 +1,5 @@
 import gleam/set
+import gleam/dict
 
 pub type Value {
   Nan
@@ -17,5 +18,5 @@ pub type Value {
   SimpleError(String)
   IntegerAsDouble(Int)
   SimpleString(String)
-  Map(List(#(Value, Value)))
+  Map(dict.Dict(Value, Value))
 }
