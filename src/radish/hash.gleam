@@ -97,13 +97,10 @@ pub fn get_all(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
-import gleam/io
-
 /// see [here](https://redis.io/commands/hmget)!
 pub fn mget(client, key: String, fields: List(String), timeout: Int) {
   command.mget(key, fields)
   |> execute(client, _, timeout)
-  |> io.debug
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
