@@ -82,15 +82,14 @@ pub fn scan(client, key: String, cursor: Int, count: Int, timeout: Int) {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)
@@ -117,15 +116,14 @@ pub fn scan_pattern(
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)

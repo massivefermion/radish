@@ -37,15 +37,12 @@ pub type ExpireCondition {
 
 pub fn start(host: String, port: Int, options: List(StartOption)) {
   let #(timeout, options) = case
-    list.pop_map(
-      options,
-      fn(item) {
-        case item {
-          Timeout(timeout) -> Ok(timeout)
-          _ -> Error(Nil)
-        }
-      },
-    )
+    list.pop_map(options, fn(item) {
+      case item {
+        Timeout(timeout) -> Ok(timeout)
+        _ -> Error(Nil)
+      }
+    })
   {
     Ok(result) -> result
     Error(Nil) -> #(1024, options)
@@ -54,17 +51,14 @@ pub fn start(host: String, port: Int, options: List(StartOption)) {
   use client <- result.then(client.start(host, port, timeout))
 
   let options =
-    list.map(
-      options,
-      fn(item) {
-        case item {
-          Auth(password) -> command.Auth(password)
-          AuthWithUsername(username, password) ->
-            command.AuthWithUsername(username, password)
-          Timeout(_) -> command.AuthWithUsername("", "")
-        }
-      },
-    )
+    list.map(options, fn(item) {
+      case item {
+        Auth(password) -> command.Auth(password)
+        AuthWithUsername(username, password) ->
+          command.AuthWithUsername(username, password)
+        Timeout(_) -> command.AuthWithUsername("", "")
+      }
+    })
 
   use _ <- result.then(
     execute(client, command.hello(3, options), timeout)
@@ -90,15 +84,12 @@ pub fn keys(client, pattern: String, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
-        list.try_map(
-          array,
-          fn(item) {
-            case item {
-              resp.BulkString(value) -> Ok(value)
-              _ -> Error(error.RESPError)
-            }
-          },
-        )
+        list.try_map(array, fn(item) {
+          case item {
+            resp.BulkString(value) -> Ok(value)
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })
@@ -114,15 +105,14 @@ pub fn scan(client, cursor: Int, count: Int, timeout: Int) {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)
@@ -148,15 +138,14 @@ pub fn scan_pattern(
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)
@@ -189,15 +178,14 @@ pub fn scan_with_type(
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)
@@ -231,15 +219,14 @@ pub fn scan_pattern_with_type(
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
         case int.parse(new_cursor_str) {
           Ok(new_cursor) -> {
-            use array <- result.then(list.try_map(
-              keys,
-              fn(item) {
+            use array <- result.then(
+              list.try_map(keys, fn(item) {
                 case item {
                   resp.BulkString(value) -> Ok(value)
                   _ -> Error(error.RESPError)
                 }
-              },
-            ))
+              }),
+            )
             Ok(#(array, new_cursor))
           }
           Error(Nil) -> Error(error.RESPError)
@@ -284,16 +271,13 @@ pub fn mget(client, keys: List(String), timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
-        list.try_map(
-          array,
-          fn(item) {
-            case item {
-              resp.BulkString(str) -> Ok(str)
-              resp.Null -> Error(error.NotFound)
-              _ -> Error(error.RESPError)
-            }
-          },
-        )
+        list.try_map(array, fn(item) {
+          case item {
+            resp.BulkString(str) -> Ok(str)
+            resp.Null -> Error(error.NotFound)
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })
@@ -467,14 +451,15 @@ pub fn key_type(client, key: String, timeout: Int) {
     case value {
       [resp.SimpleString(str)] ->
         case str {
-          "set" -> Set
-          "list" -> List
-          "zset" -> ZSet
-          "hash" -> Hash
-          "string" -> String
-          "stream" -> Stream
+          "set" -> Ok(Set)
+          "list" -> Ok(List)
+          "zset" -> Ok(ZSet)
+          "hash" -> Ok(Hash)
+          "string" -> Ok(String)
+          "stream" -> Ok(Stream)
+          _ -> Error(error.RESPError)
         }
-        |> Ok
+
       _ -> Error(error.RESPError)
     }
   })
@@ -589,19 +574,16 @@ pub fn subscribe(
     command.subscribe(channels)
     |> execute_blocking(client, _, timeout)
     |> result.map(fn(value) {
-      list.each(
-        value,
-        fn(item) {
-          case item {
-            resp.Push([
-              resp.BulkString("subscribe"),
-              resp.BulkString(channel),
-              resp.Integer(n),
-            ]) -> Ok(init_handler(channel, n))
-            _ -> Error(error.RESPError)
-          }
-        },
-      )
+      list.each(value, fn(item) {
+        case item {
+          resp.Push([
+            resp.BulkString("subscribe"),
+            resp.BulkString(channel),
+            resp.Integer(n),
+          ]) -> Ok(init_handler(channel, n))
+          _ -> Error(error.RESPError)
+        }
+      })
     })
 
   use value <- receive_forever(client, timeout)
@@ -643,19 +625,16 @@ pub fn subscribe_to_patterns(
     command.subscribe_to_patterns(patterns)
     |> execute_blocking(client, _, timeout)
     |> result.map(fn(value) {
-      list.each(
-        value,
-        fn(item) {
-          case item {
-            resp.Push([
-              resp.BulkString("psubscribe"),
-              resp.BulkString(channel),
-              resp.Integer(n),
-            ]) -> init_handler(channel, n)
-            _ -> Nil
-          }
-        },
-      )
+      list.each(value, fn(item) {
+        case item {
+          resp.Push([
+            resp.BulkString("psubscribe"),
+            resp.BulkString(channel),
+            resp.Integer(n),
+          ]) -> init_handler(channel, n)
+          _ -> Nil
+        }
+      })
     })
 
   use value <- receive_forever(client, timeout)
@@ -690,17 +669,14 @@ fn unsubscribe(client, channels: List(String), timeout: Int) {
   command.unsubscribe(channels)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
-    list.all(
-      value,
-      fn(item) {
-        let assert resp.Push([
-          resp.BulkString("unsubscribe"),
-          resp.BulkString(_),
-          resp.Integer(n),
-        ]) = item
-        n > 0
-      },
-    )
+    list.all(value, fn(item) {
+      let assert resp.Push([
+        resp.BulkString("unsubscribe"),
+        resp.BulkString(_),
+        resp.Integer(n),
+      ]) = item
+      n > 0
+    })
   })
 }
 
@@ -709,17 +685,14 @@ fn unsubscribe_from_all(client, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     value
-    list.all(
-      value,
-      fn(item) {
-        let assert resp.Push([
-          resp.BulkString("unsubscribe"),
-          resp.BulkString(_),
-          resp.Integer(n),
-        ]) = item
-        n > 0
-      },
-    )
+    list.all(value, fn(item) {
+      let assert resp.Push([
+        resp.BulkString("unsubscribe"),
+        resp.BulkString(_),
+        resp.Integer(n),
+      ]) = item
+      n > 0
+    })
   })
 }
 
@@ -727,17 +700,14 @@ fn unsubscribe_from_patterns(client, patterns: List(String), timeout: Int) {
   command.unsubscribe_from_patterns(patterns)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
-    list.all(
-      value,
-      fn(item) {
-        let assert resp.Push([
-          resp.BulkString("punsubscribe"),
-          resp.BulkString(_),
-          resp.Integer(n),
-        ]) = item
-        n > 0
-      },
-    )
+    list.all(value, fn(item) {
+      let assert resp.Push([
+        resp.BulkString("punsubscribe"),
+        resp.BulkString(_),
+        resp.Integer(n),
+      ]) = item
+      n > 0
+    })
   })
 }
 
@@ -745,16 +715,13 @@ fn unsubscribe_from_all_patterns(client, timeout: Int) {
   command.unsubscribe_from_all_patterns()
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
-    list.all(
-      value,
-      fn(item) {
-        let assert resp.Push([
-          resp.BulkString("punsubscribe"),
-          resp.BulkString(_),
-          resp.Integer(n),
-        ]) = item
-        n > 0
-      },
-    )
+    list.all(value, fn(item) {
+      let assert resp.Push([
+        resp.BulkString("punsubscribe"),
+        resp.BulkString(_),
+        resp.Integer(n),
+      ]) = item
+      n > 0
+    })
   })
 }

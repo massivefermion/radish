@@ -22,15 +22,14 @@ pub type SetOption {
 
 pub fn hello(protocol: Int, options: List(HelloOption)) {
   ["HELLO", int.to_string(protocol)]
-  |> list.append(list.flat_map(
-    options,
-    fn(item) {
+  |> list.append(
+    list.flat_map(options, fn(item) {
       case item {
         Auth(password) -> ["AUTH", "default", password]
         AuthWithUsername(username, password) -> ["AUTH", username, password]
       }
-    },
-  ))
+    }),
+  )
   |> prepare
 }
 
@@ -110,22 +109,18 @@ pub fn append(key: String, value: String) {
 }
 
 pub fn set(key: String, value: String, options: List(SetOption)) {
-  list.fold(
-    options,
-    ["SET", key, value],
-    fn(cmd, option) {
-      case option {
-        NX -> list.append(cmd, ["NX"])
-        XX -> list.append(cmd, ["XX"])
-        GET -> list.append(cmd, ["GET"])
-        KEEPTTL -> list.append(cmd, ["KEEPTTL"])
-        EX(value) -> list.append(cmd, ["EX", int.to_string(value)])
-        PX(value) -> list.append(cmd, ["PX", int.to_string(value)])
-        EXAT(value) -> list.append(cmd, ["EXAT", int.to_string(value)])
-        PXAT(value) -> list.append(cmd, ["PXAT", int.to_string(value)])
-      }
-    },
-  )
+  list.fold(options, ["SET", key, value], fn(cmd, option) {
+    case option {
+      NX -> list.append(cmd, ["NX"])
+      XX -> list.append(cmd, ["XX"])
+      GET -> list.append(cmd, ["GET"])
+      KEEPTTL -> list.append(cmd, ["KEEPTTL"])
+      EX(value) -> list.append(cmd, ["EX", int.to_string(value)])
+      PX(value) -> list.append(cmd, ["PX", int.to_string(value)])
+      EXAT(value) -> list.append(cmd, ["EXAT", int.to_string(value)])
+      PXAT(value) -> list.append(cmd, ["PXAT", int.to_string(value)])
+    }
+  })
   |> prepare
 }
 

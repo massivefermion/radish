@@ -80,15 +80,12 @@ pub fn range(client, key: String, start: Int, end: Int, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
-        list.try_map(
-          array,
-          fn(item) {
-            case item {
-              resp.BulkString(str) -> Ok(str)
-              _ -> Error(error.RESPError)
-            }
-          },
-        )
+        list.try_map(array, fn(item) {
+          case item {
+            resp.BulkString(str) -> Ok(str)
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })
@@ -170,15 +167,12 @@ pub fn lpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
-        list.try_map(
-          array,
-          fn(item) {
-            case item {
-              resp.BulkString(str) -> Ok(str)
-              _ -> Error(error.RESPError)
-            }
-          },
-        )
+        list.try_map(array, fn(item) {
+          case item {
+            resp.BulkString(str) -> Ok(str)
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })
@@ -192,15 +186,12 @@ pub fn rpop_multiple(client, key: String, count: Int, timeout: Int) {
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
-        list.try_map(
-          array,
-          fn(item) {
-            case item {
-              resp.BulkString(str) -> Ok(str)
-              _ -> Error(error.RESPError)
-            }
-          },
-        )
+        list.try_map(array, fn(item) {
+          case item {
+            resp.BulkString(str) -> Ok(str)
+            _ -> Error(error.RESPError)
+          }
+        })
       _ -> Error(error.RESPError)
     }
   })

@@ -62,35 +62,47 @@ fn boolean(value: Bool) {
 }
 
 fn simple_string(value: String) {
-  "+" <> {
+  "+"
+  <> {
     value
     |> string.replace("\r", "")
     |> string.replace("\n", "")
-  } <> "\r\n"
+  }
+  <> "\r\n"
 }
 
 fn bulk_string(value: String) {
-  "$" <> {
+  "$"
+  <> {
     value
     |> string.length
     |> int.to_string
-  } <> "\r\n" <> value <> "\r\n"
+  }
+  <> "\r\n"
+  <> value
+  <> "\r\n"
 }
 
 fn simple_error(value: String) {
-  "-" <> {
+  "-"
+  <> {
     value
     |> string.replace("\r", "")
     |> string.replace("\n", "")
-  } <> "\r\n"
+  }
+  <> "\r\n"
 }
 
 fn bulk_error(value: String) {
-  "!" <> {
+  "!"
+  <> {
     value
     |> string.length
     |> int.to_string
-  } <> "\r\n" <> value <> "\r\n"
+  }
+  <> "\r\n"
+  <> value
+  <> "\r\n"
 }
 
 fn big_number(value: Int) {
@@ -106,22 +118,28 @@ fn integer_as_double(value: Int) {
 }
 
 fn array(value: List(resp.Value)) {
-  "*" <> {
+  "*"
+  <> {
     value
     |> list.length
     |> int.to_string
-  } <> "\r\n" <> {
+  }
+  <> "\r\n"
+  <> {
     list.map(value, encode_internal)
     |> string.join("")
   }
 }
 
 fn map(value: dict.Dict(resp.Value, resp.Value)) {
-  "%" <> {
+  "%"
+  <> {
     value
     |> dict.size
     |> int.to_string
-  } <> "\r\n" <> {
+  }
+  <> "\r\n"
+  <> {
     value
     |> dict.to_list
     |> list.map(fn(item) { encode_internal(item.0) <> encode_internal(item.1) })
@@ -130,11 +148,14 @@ fn map(value: dict.Dict(resp.Value, resp.Value)) {
 }
 
 fn push(value: List(resp.Value)) {
-  ">" <> {
+  ">"
+  <> {
     value
     |> list.length
     |> int.to_string
-  } <> "\r\n" <> {
+  }
+  <> "\r\n"
+  <> {
     list.map(value, encode_internal)
     |> string.join("")
   }
@@ -142,11 +163,14 @@ fn push(value: List(resp.Value)) {
 
 fn set(value: set.Set(resp.Value)) {
   let value = set.to_list(value)
-  "~" <> {
+  "~"
+  <> {
     value
     |> list.length
     |> int.to_string
-  } <> "\r\n" <> {
+  }
+  <> "\r\n"
+  <> {
     list.map(value, encode_internal)
     |> string.join("")
   }

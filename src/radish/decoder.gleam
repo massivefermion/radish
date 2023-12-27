@@ -103,14 +103,12 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use length <- result.then(bit_array.to_string(length))
       use length <- result.then(int.parse(length))
 
-      use #(value, rest) <- result.then(consume_by_length(
-        rest,
-        length - 1,
-        <<>>,
-      ))
+      use #(value, rest) <- result.then(
+        consume_by_length(rest, length - 1, <<>>),
+      )
       use value <- result.then(bit_array.to_string(value))
 
-      let <<"\r\n":utf8, rest:bits>> = rest
+      let assert <<"\r\n":utf8, rest:bits>> = rest
       #(resp.BulkString(value), rest)
       |> Ok
     }
@@ -120,14 +118,12 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use length <- result.then(bit_array.to_string(length))
       use length <- result.then(int.parse(length))
 
-      use #(value, rest) <- result.then(consume_by_length(
-        rest,
-        length - 1,
-        <<>>,
-      ))
+      use #(value, rest) <- result.then(
+        consume_by_length(rest, length - 1, <<>>),
+      )
       use value <- result.then(bit_array.to_string(value))
 
-      let <<"\r\n":utf8, rest:bits>> = rest
+      let assert <<"\r\n":utf8, rest:bits>> = rest
       #(resp.BulkError(value), rest)
       |> Ok
     }
@@ -188,6 +184,8 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       )
       |> Ok
     }
+
+    _ -> Error(Nil)
   }
 }
 
@@ -195,14 +193,11 @@ fn consume_till_crlf(
   data: BitArray,
   storage: BitArray,
 ) -> Result(#(BitArray, BitArray), Nil) {
-  case bit_array.byte_size(data) {
-    0 -> Error(Nil)
-    _ ->
-      case data {
-        <<"\r\n":utf8, rest:bits>> -> Ok(#(storage, rest))
-        <<ch:8, rest:bits>> ->
-          consume_till_crlf(rest, bit_array.append(storage, <<ch>>))
-      }
+  case data {
+    <<"\r\n":utf8, rest:bits>> -> Ok(#(storage, rest))
+    <<ch:8, rest:bits>> ->
+      consume_till_crlf(rest, bit_array.append(storage, <<ch>>))
+    _ -> Error(Nil)
   }
 }
 
@@ -214,7 +209,7 @@ fn consume_by_length(
   case bit_array.byte_size(data) {
     0 -> Error(Nil)
     _ -> {
-      let <<ch:8, rest:bits>> = data
+      let assert <<ch:8, rest:bits>> = data
       case bit_array.byte_size(storage) == length {
         True -> Ok(#(bit_array.append(storage, <<ch>>), rest))
         False ->
