@@ -1,10 +1,11 @@
-import gleam/int
-import gleam/set
-import gleam/list
+import gleam/bit_array
 import gleam/dict
 import gleam/float
+import gleam/int
+import gleam/list
+import gleam/set
 import gleam/string
-import gleam/bit_array
+
 import radish/resp
 
 pub fn encode(value: resp.Value) -> BitArray {

@@ -5,7 +5,7 @@
 
 # radish
 
-A Redis client for Gleam
+A Gleam client for Valkey, KeyDB, Redis and other tools with compatible APIs
 
 ## <img width=32 src="https://raw.githubusercontent.com/massivefermion/radish/main/icon.png"> Quick start
 

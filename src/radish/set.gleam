@@ -1,12 +1,13 @@
 //// All timeouts are in milliseconds
 
-import gleam/set
 import gleam/int
 import gleam/list
 import gleam/result
-import radish/resp
-import radish/error
+import gleam/set
+
 import radish/command/set as command
+import radish/error
+import radish/resp
 import radish/utils.{execute}
 
 /// see [here](https://redis.io/commands/sadd)!

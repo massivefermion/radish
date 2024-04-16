@@ -1,7 +1,8 @@
+import gleam/float
 import gleam/int
 import gleam/list
-import gleam/float
 import gleam/option
+
 import radish/utils.{prepare}
 
 pub type HelloOption {

@@ -1,11 +1,12 @@
 //// All timeouts are in milliseconds
 
 import gleam/list
-import gleam/result
 import gleam/option
-import radish/resp
-import radish/error
+import gleam/result
+
 import radish/command/list as command
+import radish/error
+import radish/resp
 import radish/utils.{execute, execute_blocking}
 
 /// see [here](https://redis.io/commands/lpush)!

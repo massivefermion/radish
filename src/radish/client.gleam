@@ -1,10 +1,12 @@
 import gleam/bit_array
-import gleam/otp/actor
 import gleam/erlang/process
-import radish/tcp
-import radish/error
+import gleam/otp/actor
+
 import radish/decoder.{decode}
+import radish/error
 import radish/resp.{type Value}
+import radish/tcp
+
 import mug.{type Error}
 
 pub type Message {

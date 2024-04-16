@@ -1,5 +1,5 @@
-import gleam/set
 import gleam/dict
+import gleam/set
 
 pub type Value {
   Nan

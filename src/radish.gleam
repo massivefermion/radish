@@ -1,17 +1,21 @@
 //// All timeouts are in milliseconds
 
+import gleam/erlang/process
+import gleam/float
 import gleam/int
 import gleam/list
-import gleam/float
 import gleam/option
-import gleam/result
 import gleam/otp/actor
-import gleam/erlang/process
-import radish/resp
-import radish/error
+import gleam/result
+
 import radish/client
-import radish/utils.{execute, execute_blocking, receive_forever}
 import radish/command
+import radish/error
+import radish/resp
+import radish/utils.{execute, execute_blocking, receive_forever}
+
+pub type Message =
+  client.Message
 
 pub type StartOption {
   Timeout(Int)
@@ -684,7 +688,6 @@ fn unsubscribe_from_all(client, timeout: Int) {
   command.unsubscribe_from_all()
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
-    value
     list.all(value, fn(item) {
       let assert resp.Push([
         resp.BulkString("unsubscribe"),

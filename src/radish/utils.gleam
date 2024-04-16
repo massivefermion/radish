@@ -1,10 +1,11 @@
+import gleam/erlang/process
+import gleam/function
 import gleam/list
 import gleam/result
-import gleam/function
-import gleam/erlang/process
-import radish/error
+
 import radish/client
 import radish/encoder.{encode}
+import radish/error
 import radish/resp.{Array, BulkString}
 
 pub fn prepare(parts: List(String)) {

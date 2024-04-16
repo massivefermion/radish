@@ -1,11 +1,12 @@
+import gleam/float
 import gleam/int
 import gleam/list
-import gleam/float
 import gleam/result
-import radish/resp
-import radish/error
-import radish/utils.{execute}
+
 import radish/command/sorted_set as command
+import radish/error
+import radish/resp
+import radish/utils.{execute}
 
 pub type Score {
   Infinity

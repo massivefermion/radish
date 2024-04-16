@@ -1,12 +1,13 @@
-import gleam/int
-import gleam/set
-import gleam/list
+import gleam/bit_array
 import gleam/dict
 import gleam/float
+import gleam/int
+import gleam/list
 import gleam/result
-import gleam/bit_array
-import radish/resp
+import gleam/set
+
 import radish/error
+import radish/resp
 
 pub fn decode(value: BitArray) -> Result(List(resp.Value), error.Error) {
   decode_multiple(value, [])
@@ -58,8 +59,8 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
         Ok(value) ->
           #(
             value
-            |> int.to_float
-            |> resp.Double,
+              |> int.to_float
+              |> resp.Double,
             rest,
           )
           |> Ok
@@ -136,7 +137,7 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(decode_array(rest, length, []))
       #(
         value
-        |> resp.Array,
+          |> resp.Array,
         rest,
       )
       |> Ok
@@ -150,7 +151,7 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(decode_array(rest, length, []))
       #(
         value
-        |> resp.Push,
+          |> resp.Push,
         rest,
       )
       |> Ok
@@ -164,8 +165,8 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(decode_array(rest, length, []))
       #(
         value
-        |> set.from_list
-        |> resp.Set,
+          |> set.from_list
+          |> resp.Set,
         rest,
       )
       |> Ok
@@ -179,7 +180,7 @@ fn decode_message(value: BitArray) -> Result(#(resp.Value, BitArray), Nil) {
       use #(value, rest) <- result.then(decode_map(rest, length, []))
       #(
         value
-        |> resp.Map,
+          |> resp.Map,
         rest,
       )
       |> Ok

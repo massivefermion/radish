@@ -1,12 +1,13 @@
-import gleam/int
-import gleam/list
 import gleam/dict
 import gleam/float
-import radish/resp
+import gleam/int
+import gleam/list
 import gleam/result
-import radish/error
-import radish/utils.{execute}
+
 import radish/command/hash as command
+import radish/error
+import radish/resp
+import radish/utils.{execute}
 
 /// see [here](https://redis.io/commands/hset)!
 pub fn set(client, key: String, map: dict.Dict(String, String), timeout: Int) {

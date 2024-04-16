@@ -1,5 +1,6 @@
-import gleam/result
 import gleam/erlang/process
+import gleam/result
+
 import mug
 
 pub fn connect(host: String, port: Int, timeout: Int) {

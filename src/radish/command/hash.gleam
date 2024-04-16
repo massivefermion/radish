@@ -1,6 +1,7 @@
+import gleam/float
 import gleam/int
 import gleam/list
-import gleam/float
+
 import radish/utils.{prepare}
 
 pub fn set(key: String, fields: List(#(String, String))) {
