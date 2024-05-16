@@ -76,7 +76,7 @@ fn bulk_string(value: String) {
   "$"
   <> {
     value
-    |> string.length
+    |> string.byte_size
     |> int.to_string
   }
   <> "\r\n"
@@ -98,7 +98,7 @@ fn bulk_error(value: String) {
   "!"
   <> {
     value
-    |> string.length
+    |> string.byte_size
     |> int.to_string
   }
   <> "\r\n"
