@@ -509,6 +509,33 @@ pub fn persist(client, key: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/ping)!
+/// for use with a custom message, use `ping_message/3`.
+pub fn ping(client, timeout: Int) {
+  command.ping()
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.SimpleString("PONG")] -> Ok("PONG")
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/ping)!
+pub fn ping_message(client, message: String, timeout: Int) {
+  command.ping_message(message)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.BulkString(message)] -> Ok(message)
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
 /// see [here](https://redis.io/commands/expire)!
 pub fn expire(client, key: String, ttl: Int, timeout: Int) {
   command.expire(key, ttl, option.None)

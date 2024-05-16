@@ -189,6 +189,16 @@ pub fn persist(key: String) {
   |> prepare
 }
 
+pub fn ping() {
+  ["PING"]
+  |> prepare
+}
+
+pub fn ping_message(message: String) {
+  ["PING", message]
+  |> prepare
+}
+
 pub fn expire(key: String, ttl: Int, expire_if: option.Option(String)) {
   case expire_if {
     option.None -> ["EXPIRE", key, int.to_string(ttl)]
