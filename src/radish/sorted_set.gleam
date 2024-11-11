@@ -400,6 +400,124 @@ pub fn pop_max(client, key: String, count: Int, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/zrange)!
+pub fn range(client, key: String, start: Int, stop: Int, timeout: Int) {
+  command.range(key, start, stop)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.Array(members)] -> {
+        use array <- result.then(
+          members
+          |> list.try_map(fn(item) {
+            case item {
+              resp.Array([resp.BulkString(member), score]) ->
+                case map_score([score]) {
+                  Ok(score) -> Ok(#(member, score))
+                  _ -> Error(error.RESPError)
+                }
+              _ -> Error(error.RESPError)
+            }
+          }),
+        )
+        Ok(array)
+      }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/zrange)!
+pub fn head(client, key: String, timeout: Int) {
+  command.head(key)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.Array(members)] -> {
+        use array <- result.then(
+          members
+          |> list.try_map(fn(item) {
+            case item {
+              resp.Array([resp.BulkString(member), score]) ->
+                case map_score([score]) {
+                  Ok(score) -> Ok(#(member, score))
+                  _ -> Error(error.RESPError)
+                }
+              _ -> Error(error.RESPError)
+            }
+          }),
+        )
+        Ok(array)
+      }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+  |> result.try(fn(value) {
+    case value {
+      [x, ..] -> Ok(x)
+      _ -> Error(error.NotFound)
+    }
+  })
+}
+
+/// see [here](https://redis.io/commands/zrevrange)!
+pub fn reverse_range(client, key: String, start: Int, stop: Int, timeout: Int) {
+  command.reverse_range(key, start, stop)
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.Array(members)] -> {
+        use array <- result.then(
+          members
+          |> list.try_map(fn(item) {
+            case item {
+              resp.Array([resp.BulkString(member), score]) ->
+                case map_score([score]) {
+                  Ok(score) -> Ok(#(member, score))
+                  _ -> Error(error.RESPError)
+                }
+              _ -> Error(error.RESPError)
+            }
+          }),
+        )
+        Ok(array)
+      }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/zrangebyscore)!
+pub fn range_by_score(client, key: String, min: Score, max: Score, timeout: Int) {
+  command.range_by_score(key, encode_score(min), encode_score(max))
+  |> execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.Array(members)] -> {
+        use array <- result.then(
+          members
+          |> list.try_map(fn(item) {
+            case item {
+              resp.Array([resp.BulkString(member), score]) ->
+                case map_score([score]) {
+                  Ok(score) -> Ok(#(member, score))
+                  _ -> Error(error.RESPError)
+                }
+              _ -> Error(error.RESPError)
+            }
+          }),
+        )
+        Ok(array)
+      }
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
 fn encode_member(member: #(String, Score)) {
   #(member.0, encode_score(member.1))
 }
