@@ -286,27 +286,7 @@ pub fn rem(client, key: String, members: List(String), timeout: Int) {
 pub fn random_members(client, key: String, count: Int, timeout: Int) {
   command.random_members(key, count)
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
 }
 
@@ -348,27 +328,7 @@ pub fn reverse_rank(client, key: String, member: String, timeout: Int) {
 pub fn pop_min(client, key: String, count: Int, timeout: Int) {
   command.pop_min(key, count)
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
 }
 
@@ -376,27 +336,7 @@ pub fn pop_min(client, key: String, count: Int, timeout: Int) {
 pub fn pop_max(client, key: String, count: Int, timeout: Int) {
   command.pop_max(key, count)
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
 }
 
@@ -404,27 +344,7 @@ pub fn pop_max(client, key: String, count: Int, timeout: Int) {
 pub fn range(client, key: String, start: Int, stop: Int, timeout: Int) {
   command.range(key, start, stop)
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
 }
 
@@ -434,10 +354,10 @@ pub fn head(client, key: String, timeout: Int) {
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
-      [resp.Array(members)] -> {
+      [resp.Array([member, ..])] -> {
         use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
+          member
+          |> fn(item) {
             case item {
               resp.Array([resp.BulkString(member), score]) ->
                 case map_score([score]) {
@@ -446,7 +366,7 @@ pub fn head(client, key: String, timeout: Int) {
                 }
               _ -> Error(error.RESPError)
             }
-          }),
+          },
         )
         Ok(array)
       }
@@ -454,39 +374,13 @@ pub fn head(client, key: String, timeout: Int) {
     }
   })
   |> result.flatten
-  |> result.try(fn(value) {
-    case value {
-      [x, ..] -> Ok(x)
-      _ -> Error(error.NotFound)
-    }
-  })
 }
 
 /// see [here](https://redis.io/commands/zrevrange)!
 pub fn reverse_range(client, key: String, start: Int, stop: Int, timeout: Int) {
   command.reverse_range(key, start, stop)
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
 }
 
@@ -494,28 +388,30 @@ pub fn reverse_range(client, key: String, start: Int, stop: Int, timeout: Int) {
 pub fn range_by_score(client, key: String, min: Score, max: Score, timeout: Int) {
   command.range_by_score(key, encode_score(min), encode_score(max))
   |> execute(client, _, timeout)
-  |> result.map(fn(value) {
-    case value {
-      [resp.Array(members)] -> {
-        use array <- result.then(
-          members
-          |> list.try_map(fn(item) {
-            case item {
-              resp.Array([resp.BulkString(member), score]) ->
-                case map_score([score]) {
-                  Ok(score) -> Ok(#(member, score))
-                  _ -> Error(error.RESPError)
-                }
-              _ -> Error(error.RESPError)
-            }
-          }),
-        )
-        Ok(array)
-      }
-      _ -> Error(error.RESPError)
-    }
-  })
+  |> result.map(extract_member_score_pairs)
   |> result.flatten
+}
+
+fn extract_member_score_pairs(value: List(resp.Value)) {
+  case value {
+    [resp.Array(members)] -> {
+      use array <- result.then(
+        members
+        |> list.try_map(fn(item) {
+          case item {
+            resp.Array([resp.BulkString(member), score]) ->
+              case map_score([score]) {
+                Ok(score) -> Ok(#(member, score))
+                _ -> Error(error.RESPError)
+              }
+            _ -> Error(error.RESPError)
+          }
+        }),
+      )
+      Ok(array)
+    }
+    _ -> Error(error.RESPError)
+  }
 }
 
 fn encode_member(member: #(String, Score)) {
