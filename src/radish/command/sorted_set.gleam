@@ -119,11 +119,6 @@ pub fn range(key: String, start: Int, stop: Int) {
   |> prepare
 }
 
-pub fn head(key: String) {
-  ["ZRANGE", key, "0", "0", "WITHSCORES"]
-  |> prepare
-}
-
 pub fn reverse_range(key: String, start: Int, stop: Int) {
   ["ZREVRANGE", key, int.to_string(start), int.to_string(stop), "WITHSCORES"]
   |> prepare

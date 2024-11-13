@@ -350,7 +350,7 @@ pub fn range(client, key: String, start: Int, stop: Int, timeout: Int) {
 
 /// see [here](https://redis.io/commands/zrange)!
 pub fn head(client, key: String, timeout: Int) {
-  command.head(key)
+  command.range(key, 0, 0)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
