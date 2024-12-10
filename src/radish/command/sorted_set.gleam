@@ -113,3 +113,18 @@ pub fn pop_max(key: String, count: Int) {
   ["ZPOPMAX", key, int.to_string(count)]
   |> prepare
 }
+
+pub fn range(key: String, start: Int, stop: Int) {
+  ["ZRANGE", key, int.to_string(start), int.to_string(stop), "WITHSCORES"]
+  |> prepare
+}
+
+pub fn reverse_range(key: String, start: Int, stop: Int) {
+  ["ZREVRANGE", key, int.to_string(start), int.to_string(stop), "WITHSCORES"]
+  |> prepare
+}
+
+pub fn range_by_score(key: String, min: String, max: String) {
+  ["ZRANGEBYSCORE", key, min, max, "WITHSCORES"]
+  |> prepare
+}

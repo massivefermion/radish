@@ -1,5 +1,5 @@
 name = "radish"
-version = "0.15.0"
+version = "0.16.0"
 
 description = "A Gleam client for Valkey, KeyDB, Redis and other tools with compatible APIs"
 gleam = ">= 0.32.0"
