@@ -2,6 +2,8 @@ import gleam/bit_array
 import gleam/erlang/process
 import gleam/otp/actor
 
+import lifeguard
+
 import radish/decoder.{decode}
 import radish/error
 import radish/resp.{type Value}
@@ -10,7 +12,6 @@ import radish/tcp
 import mug.{type Error}
 
 pub type Message {
-  Shutdown
   Command(BitArray, process.Subject(Result(List(Value), error.Error)), Int)
   BlockingCommand(
     BitArray,
@@ -20,17 +21,35 @@ pub type Message {
   ReceiveForever(process.Subject(Result(List(Value), error.Error)), Int)
 }
 
-pub fn start(host: String, port: Int, timeout: Int) {
-  actor.start_spec(actor.Spec(
-    init: fn() {
+pub type Client =
+  lifeguard.Pool(Message)
+
+pub fn start(
+  host: String,
+  port: Int,
+  timeout: Int,
+  pool_size: Int,
+) -> Result(lifeguard.Pool(Message), lifeguard.StartError) {
+  lifeguard.new(worker_spec(host, port, timeout))
+  |> lifeguard.with_size(pool_size)
+  |> lifeguard.start(timeout)
+}
+
+fn worker_spec(
+  host: String,
+  port: Int,
+  timeout: Int,
+) -> lifeguard.Spec(mug.Socket, Message) {
+  lifeguard.Spec(
+    init: fn(selector) {
       case tcp.connect(host, port, timeout) {
-        Ok(socket) -> actor.Ready(socket, process.new_selector())
+        Ok(socket) -> actor.Ready(socket, selector)
         Error(_) -> actor.Failed("Unable to connect to Redis server")
       }
     },
     init_timeout: timeout,
     loop: handle_message,
-  ))
+  )
 }
 
 fn handle_message(msg: Message, socket: mug.Socket) {
@@ -103,11 +122,6 @@ fn handle_message(msg: Message, socket: mug.Socket) {
           actor.Stop(process.Abnormal("TCP Error"))
         }
       }
-    }
-
-    Shutdown -> {
-      let _ = mug.shutdown(socket)
-      actor.Stop(process.Normal)
     }
   }
 }

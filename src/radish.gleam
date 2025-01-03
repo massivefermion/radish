@@ -7,6 +7,7 @@ import gleam/list
 import gleam/option
 import gleam/otp/actor
 import gleam/result
+import lifeguard
 
 import radish/client
 import radish/command
@@ -19,6 +20,8 @@ pub type Message =
 
 pub type StartOption {
   Timeout(Int)
+  /// The size of the connection pool. Defaults to 3.
+  PoolSize(Int)
   Auth(String)
   AuthWithUsername(String, String)
 }
@@ -52,7 +55,19 @@ pub fn start(host: String, port: Int, options: List(StartOption)) {
     Error(Nil) -> #(1024, options)
   }
 
-  use client <- result.then(client.start(host, port, timeout))
+  let #(pool_size, options) = case
+    list.pop_map(options, fn(item) {
+      case item {
+        PoolSize(pool_size) -> Ok(pool_size)
+        _ -> Error(Nil)
+      }
+    })
+  {
+    Ok(result) -> result
+    Error(Nil) -> #(3, options)
+  }
+
+  use client <- result.then(client.start(host, port, timeout, pool_size))
 
   let options =
     list.map(options, fn(item) {
@@ -60,7 +75,7 @@ pub fn start(host: String, port: Int, options: List(StartOption)) {
         Auth(password) -> command.Auth(password)
         AuthWithUsername(username, password) ->
           command.AuthWithUsername(username, password)
-        Timeout(_) -> command.AuthWithUsername("", "")
+        Timeout(_) | PoolSize(_) -> command.AuthWithUsername("", "")
       }
     })
 
@@ -71,14 +86,15 @@ pub fn start(host: String, port: Int, options: List(StartOption)) {
         error.ServerError(error) -> actor.InitFailed(process.Abnormal(error))
         _ -> actor.InitFailed(process.Abnormal("Failed to say hello"))
       }
+      |> lifeguard.WorkerStartError
     }),
   )
 
   Ok(client)
 }
 
-pub fn shutdown(client) {
-  process.send(client, client.Shutdown)
+pub fn shutdown(client: client.Client) {
+  lifeguard.shutdown(client)
 }
 
 /// see [here](https://redis.io/commands/keys)!
@@ -595,7 +611,7 @@ pub fn publish(client, channel: String, message: String, timeout: Int) {
 /// see [here](https://redis.io/commands/subscribe)!
 /// Also see [here](https://redis.io/docs/manual/keyspace-notifications)!
 pub fn subscribe(
-  client,
+  client: client.Client,
   channels: List(String),
   init_handler: fn(String, Int) -> Nil,
   message_handler: fn(String, String) -> Next,
@@ -696,7 +712,7 @@ pub fn subscribe_to_patterns(
   }
 }
 
-fn unsubscribe(client, channels: List(String), timeout: Int) {
+fn unsubscribe(client: client.Client, channels: List(String), timeout: Int) {
   command.unsubscribe(channels)
   |> execute(client, _, timeout)
   |> result.map(fn(value) {
@@ -711,7 +727,7 @@ fn unsubscribe(client, channels: List(String), timeout: Int) {
   })
 }
 
-fn unsubscribe_from_all(client, timeout: Int) {
+fn unsubscribe_from_all(client: client.Client, timeout: Int) {
   command.unsubscribe_from_all()
   |> execute(client, _, timeout)
   |> result.map(fn(value) {

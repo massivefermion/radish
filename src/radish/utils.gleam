@@ -3,6 +3,8 @@ import gleam/function
 import gleam/list
 import gleam/result
 
+import lifeguard
+
 import radish/client
 import radish/encoder.{encode}
 import radish/error
@@ -15,13 +17,9 @@ pub fn prepare(parts: List(String)) {
   |> encode
 }
 
-pub fn execute(
-  client: process.Subject(client.Message),
-  cmd: BitArray,
-  timeout: Int,
-) {
+pub fn execute(client: client.Client, cmd: BitArray, timeout: Int) {
   use reply <- result.then(
-    process.try_call(client, client.Command(cmd, _, timeout), timeout)
+    lifeguard.call(client, client.Command(cmd, _, timeout), timeout, timeout)
     |> result.replace_error(error.ActorError),
   )
 
@@ -33,13 +31,16 @@ pub fn execute(
   }
 }
 
-pub fn execute_blocking(
-  client: process.Subject(client.Message),
-  cmd: BitArray,
-  timeout: Int,
-) {
+pub fn execute_blocking(client: client.Client, cmd: BitArray, timeout: Int) {
   let my_subject = process.new_subject()
-  process.send(client, client.BlockingCommand(cmd, my_subject, timeout))
+  use _ <- result.then(
+    lifeguard.send(
+      client,
+      client.BlockingCommand(cmd, my_subject, timeout),
+      timeout,
+    )
+    |> result.replace_error(error.ActorError),
+  )
 
   process.new_selector()
   |> process.selecting(my_subject, function.identity)
@@ -54,13 +55,10 @@ pub fn execute_blocking(
   }
 }
 
-pub fn receive_forever(
-  client: process.Subject(client.Message),
-  timeout: Int,
-  rest,
-) {
+pub fn receive_forever(client: client.Client, timeout: Int, rest) {
   let my_subject = process.new_subject()
-  process.send(client, client.ReceiveForever(my_subject, timeout))
+  let _ =
+    lifeguard.send(client, client.ReceiveForever(my_subject, timeout), timeout)
 
   process.new_selector()
   |> process.selecting(my_subject, function.identity)
