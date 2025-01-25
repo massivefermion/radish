@@ -3,12 +3,12 @@ import gleam/function
 import gleam/list
 import gleam/result
 
-import lifeguard
-
 import radish/client
 import radish/encoder.{encode}
 import radish/error
 import radish/resp.{Array, BulkString}
+
+import lifeguard
 
 pub fn prepare(parts: List(String)) {
   parts

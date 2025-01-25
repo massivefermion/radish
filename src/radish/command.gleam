@@ -34,6 +34,10 @@ pub fn hello(protocol: Int, options: List(HelloOption)) {
   |> prepare
 }
 
+pub fn custom(command: List(String)) {
+  prepare(command)
+}
+
 pub fn keys(pattern: String) {
   ["KEYS", pattern]
   |> prepare

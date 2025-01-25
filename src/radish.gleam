@@ -13,7 +13,7 @@ import radish/client
 import radish/command
 import radish/error
 import radish/resp
-import radish/utils.{execute, execute_blocking, receive_forever}
+import radish/utils
 
 pub type Message =
   client.Message
@@ -80,7 +80,7 @@ pub fn start(host: String, port: Int, options: List(StartOption)) {
     })
 
   use _ <- result.then(
-    execute(client, command.hello(3, options), timeout)
+    utils.execute(client, command.hello(3, options), timeout)
     |> result.map_error(fn(error) {
       case error {
         error.ServerError(error) -> actor.InitFailed(process.Abnormal(error))
@@ -97,10 +97,24 @@ pub fn shutdown(client: client.Client) {
   lifeguard.shutdown(client)
 }
 
+/// use this if you need to construct a command not already covered by `radish`
+pub fn execute(client, parts: List(String), timeout: Int) {
+  parts
+  |> command.custom
+  |> utils.execute(client, _, timeout)
+}
+
+/// use this if you need to construct a blocking command not already covered by `radish`
+pub fn execute_blocking(client, parts: List(String), timeout: Int) {
+  parts
+  |> command.custom
+  |> utils.execute_blocking(client, _, timeout)
+}
+
 /// see [here](https://redis.io/commands/keys)!
 pub fn keys(client, pattern: String, timeout: Int) {
   command.keys(pattern)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
@@ -119,7 +133,7 @@ pub fn keys(client, pattern: String, timeout: Int) {
 /// see [here](https://redis.io/commands/scan)!
 pub fn scan(client, cursor: Int, count: Int, timeout: Int) {
   command.scan(cursor, count)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
@@ -152,7 +166,7 @@ pub fn scan_pattern(
   timeout: Int,
 ) {
   command.scan_pattern(cursor, pattern, count)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
@@ -192,7 +206,7 @@ pub fn scan_with_type(
     String -> command.scan_with_type(cursor, "string", count)
     Stream -> command.scan_with_type(cursor, "stream", count)
   }
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
@@ -233,7 +247,7 @@ pub fn scan_pattern_with_type(
     String -> command.scan_pattern_with_type(cursor, "string", pattern, count)
     Stream -> command.scan_pattern_with_type(cursor, "stream", pattern, count)
   }
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array([resp.BulkString(new_cursor_str), resp.Array(keys)])] ->
@@ -260,7 +274,7 @@ pub fn scan_pattern_with_type(
 /// see [here](https://redis.io/commands/exists)!
 pub fn exists(client, keys: List(String), timeout: Int) {
   command.exists(keys)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -273,7 +287,7 @@ pub fn exists(client, keys: List(String), timeout: Int) {
 /// see [here](https://redis.io/commands/get)!
 pub fn get(client, key: String, timeout: Int) {
   command.get(key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
@@ -287,7 +301,7 @@ pub fn get(client, key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/mget)!
 pub fn mget(client, keys: List(String), timeout: Int) {
   command.mget(keys)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Array(array)] ->
@@ -307,7 +321,7 @@ pub fn mget(client, keys: List(String), timeout: Int) {
 /// see [here](https://redis.io/commands/append)!
 pub fn append(client, key: String, value: String, timeout: Int) {
   command.append(key, value)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -320,7 +334,7 @@ pub fn append(client, key: String, value: String, timeout: Int) {
 /// see [here](https://redis.io/commands/set)!
 pub fn set(client, key: String, value: String, timeout: Int) {
   command.set(key, value, [])
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
@@ -333,7 +347,7 @@ pub fn set(client, key: String, value: String, timeout: Int) {
 /// see [here](https://redis.io/commands/set)!
 pub fn set_new(client, key: String, value: String, timeout: Int) {
   command.set(key, value, [command.NX])
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
@@ -346,7 +360,7 @@ pub fn set_new(client, key: String, value: String, timeout: Int) {
 /// see [here](https://redis.io/commands/set)!
 pub fn set_existing(client, key: String, value: String, timeout: Int) {
   command.set(key, value, [command.XX, command.GET])
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
@@ -359,7 +373,7 @@ pub fn set_existing(client, key: String, value: String, timeout: Int) {
 /// see [here](https://redis.io/commands/mset)!
 pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
   command.mset(kv_list)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] | [resp.BulkString(str)] -> Ok(str)
@@ -372,7 +386,7 @@ pub fn mset(client, kv_list: List(#(String, String)), timeout: Int) {
 /// see [here](https://redis.io/commands/del)!
 pub fn del(client, keys: List(String), timeout: Int) {
   command.del(keys)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -385,7 +399,7 @@ pub fn del(client, keys: List(String), timeout: Int) {
 /// see [here](https://redis.io/commands/incr)!
 pub fn incr(client, key: String, timeout: Int) {
   command.incr(key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(new)] -> Ok(new)
@@ -398,7 +412,7 @@ pub fn incr(client, key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/incrby)!
 pub fn incr_by(client, key: String, value: Int, timeout: Int) {
   command.incr_by(key, value)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(new)] -> Ok(new)
@@ -411,7 +425,7 @@ pub fn incr_by(client, key: String, value: Int, timeout: Int) {
 /// see [here](https://redis.io/commands/incrbyfloat)!
 pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
   command.incr_by_float(key, value)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.BulkString(new)] ->
@@ -426,7 +440,7 @@ pub fn incr_by_float(client, key: String, value: Float, timeout: Int) {
 /// see [here](https://redis.io/commands/decr)!
 pub fn decr(client, key: String, timeout: Int) {
   command.decr(key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(new)] -> Ok(new)
@@ -439,7 +453,7 @@ pub fn decr(client, key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/decrby)!
 pub fn decr_by(client, key: String, value: Int, timeout: Int) {
   command.decr_by(key, value)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(new)] -> Ok(new)
@@ -452,7 +466,7 @@ pub fn decr_by(client, key: String, value: Int, timeout: Int) {
 /// see [here](https://redis.io/commands/randomkey)!
 pub fn random_key(client, timeout: Int) {
   command.random_key()
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.BulkString(str)] -> Ok(str)
@@ -466,7 +480,7 @@ pub fn random_key(client, timeout: Int) {
 /// see [here](https://redis.io/commands/type)!
 pub fn key_type(client, key: String, timeout: Int) {
   command.key_type(key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] ->
@@ -489,7 +503,7 @@ pub fn key_type(client, key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/rename)!
 pub fn rename(client, key: String, new_key: String, timeout: Int) {
   command.rename(key, new_key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString(str)] -> Ok(str)
@@ -502,7 +516,7 @@ pub fn rename(client, key: String, new_key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/renamenx)!
 pub fn renamenx(client, key: String, new_key: String, timeout: Int) {
   command.renamenx(key, new_key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -515,7 +529,7 @@ pub fn renamenx(client, key: String, new_key: String, timeout: Int) {
 /// see [here](https://redis.io/commands/persist)!
 pub fn persist(client, key: String, timeout: Int) {
   command.persist(key)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -529,7 +543,7 @@ pub fn persist(client, key: String, timeout: Int) {
 /// for use with a custom message, use `ping_message/3`.
 pub fn ping(client, timeout: Int) {
   command.ping()
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.SimpleString("PONG")] -> Ok("PONG")
@@ -542,7 +556,7 @@ pub fn ping(client, timeout: Int) {
 /// see [here](https://redis.io/commands/ping)!
 pub fn ping_message(client, message: String, timeout: Int) {
   command.ping_message(message)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.BulkString(message)] -> Ok(message)
@@ -555,7 +569,7 @@ pub fn ping_message(client, message: String, timeout: Int) {
 /// see [here](https://redis.io/commands/expire)!
 pub fn expire(client, key: String, ttl: Int, timeout: Int) {
   command.expire(key, ttl, option.None)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -579,7 +593,7 @@ pub fn expire_if(
     GT -> command.expire(key, ttl, option.Some("GT"))
     LT -> command.expire(key, ttl, option.Some("LT"))
   }
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -598,7 +612,7 @@ pub type Next {
 /// see [here](https://redis.io/commands/publish)!
 pub fn publish(client, channel: String, message: String, timeout: Int) {
   command.publish(channel, message)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     case value {
       [resp.Integer(n)] -> Ok(n)
@@ -619,7 +633,7 @@ pub fn subscribe(
 ) {
   let _ =
     command.subscribe(channels)
-    |> execute_blocking(client, _, timeout)
+    |> utils.execute_blocking(client, _, timeout)
     |> result.map(fn(value) {
       list.each(value, fn(item) {
         case item {
@@ -633,7 +647,7 @@ pub fn subscribe(
       })
     })
 
-  use value <- receive_forever(client, timeout)
+  use value <- utils.receive_forever(client, timeout)
   case value {
     Ok([
       resp.Push([
@@ -670,7 +684,7 @@ pub fn subscribe_to_patterns(
 ) {
   let _ =
     command.subscribe_to_patterns(patterns)
-    |> execute_blocking(client, _, timeout)
+    |> utils.execute_blocking(client, _, timeout)
     |> result.map(fn(value) {
       list.each(value, fn(item) {
         case item {
@@ -684,7 +698,7 @@ pub fn subscribe_to_patterns(
       })
     })
 
-  use value <- receive_forever(client, timeout)
+  use value <- utils.receive_forever(client, timeout)
   case value {
     Ok([
       resp.Push([
@@ -714,7 +728,7 @@ pub fn subscribe_to_patterns(
 
 fn unsubscribe(client: client.Client, channels: List(String), timeout: Int) {
   command.unsubscribe(channels)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     list.all(value, fn(item) {
       let assert resp.Push([
@@ -729,7 +743,7 @@ fn unsubscribe(client: client.Client, channels: List(String), timeout: Int) {
 
 fn unsubscribe_from_all(client: client.Client, timeout: Int) {
   command.unsubscribe_from_all()
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     list.all(value, fn(item) {
       let assert resp.Push([
@@ -744,7 +758,7 @@ fn unsubscribe_from_all(client: client.Client, timeout: Int) {
 
 fn unsubscribe_from_patterns(client, patterns: List(String), timeout: Int) {
   command.unsubscribe_from_patterns(patterns)
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     list.all(value, fn(item) {
       let assert resp.Push([
@@ -759,7 +773,7 @@ fn unsubscribe_from_patterns(client, patterns: List(String), timeout: Int) {
 
 fn unsubscribe_from_all_patterns(client, timeout: Int) {
   command.unsubscribe_from_all_patterns()
-  |> execute(client, _, timeout)
+  |> utils.execute(client, _, timeout)
   |> result.map(fn(value) {
     list.all(value, fn(item) {
       let assert resp.Push([

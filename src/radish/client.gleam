@@ -2,13 +2,12 @@ import gleam/bit_array
 import gleam/erlang/process
 import gleam/otp/actor
 
-import lifeguard
-
 import radish/decoder.{decode}
 import radish/error
 import radish/resp.{type Value}
 import radish/tcp
 
+import lifeguard
 import mug.{type Error}
 
 pub type Message {
