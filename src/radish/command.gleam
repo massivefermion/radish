@@ -43,6 +43,16 @@ pub fn keys(pattern: String) {
   |> prepare
 }
 
+pub fn flush_db() {
+  ["FLUSHDB"]
+  |> prepare
+}
+
+pub fn flush_db_async() {
+  ["FLUSHDB", "ASYNC"]
+  |> prepare
+}
+
 pub fn scan(cursor: Int, count: Int) {
   ["SCAN", int.to_string(cursor), "COUNT", int.to_string(count)]
   |> prepare
