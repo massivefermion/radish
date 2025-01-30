@@ -130,6 +130,36 @@ pub fn keys(client, pattern: String, timeout: Int) {
   |> result.flatten
 }
 
+/// see [here](https://redis.io/commands/flushdb)!
+///
+/// to flush the database asynchronously use `flush_db_async`.
+pub fn flush_db(client, timeout: Int) {
+  command.flush_db()
+  |> utils.execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.SimpleString("OK")] -> Ok("OK")
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
+/// see [here](https://redis.io/commands/flushdb)!
+///
+/// to flush the database synchronously use `flush_db`.
+pub fn flush_db_async(client, timeout: Int) {
+  command.flush_db_async()
+  |> utils.execute(client, _, timeout)
+  |> result.map(fn(value) {
+    case value {
+      [resp.SimpleString("OK")] -> Ok("OK")
+      _ -> Error(error.RESPError)
+    }
+  })
+  |> result.flatten
+}
+
 /// see [here](https://redis.io/commands/scan)!
 pub fn scan(client, cursor: Int, count: Int, timeout: Int) {
   command.scan(cursor, count)
